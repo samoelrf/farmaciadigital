@@ -6,7 +6,7 @@ Sistema de mapeamento de farmácias e UBSs com disponibilidade de medicamentos e
 - Localização de farmácias e UBSs
 - Consulta de estoque de medicamentos essenciais
 - Agendamento de retirada
-- Notificações e QR Code para atendimento
+
 
 ## 🧠 Tecnologias
 Frontend: JavaScript (React.js / React Native)  
