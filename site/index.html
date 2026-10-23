@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Farmácia Digital</title>
+    <meta name="description" content="Farmácias e UBS de Sorocaba e Votorantim, com mapa, endereço e preço de remédios.">
+    <!-- versão fixa e SRI: o navegador confere o arquivo -->
+    <script>
+        (function () {
+            try {
+                var salvo = localStorage.getItem("farmaciadigital.tema");
+                var escuro = salvo === "escuro" || (salvo === "sistema" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+                document.documentElement.setAttribute("data-bs-theme", escuro ? "dark" : "light");
+            } catch (erro) {
+                // Sem armazenamento (modo privado): a página começa no claro
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v3.33.0/mapbox-gl.css">
+    <link rel="stylesheet" href="css/style.css?v=20261022b3">
+</head>
+<body>
+    <header class="navbar navbar-expand-lg sticky-top bg-body border-bottom shadow-sm">
+        <div class="container-fluid px-3 px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="#inicio">
+                <svg class="cruz" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 2h6v7h7v6h-7v7H9v-7H2V9h7z"/></svg>
+                Farmácia Digital
+            </a>
+            <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal"
+                    aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menu-principal">
+                <ul class="navbar-nav ms-lg-auto gap-lg-1 align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link active" href="index.html#buscar">Mapa</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#remedio">Remédio e preço</a></li>
+                    <li class="nav-item"><a class="nav-link" href="sobre.html">Sobre</a></li>
+                    <li class="nav-item" id="link-entrar" hidden><a class="nav-link" href="entrar.html">Entrar</a></li>
+                    <li class="nav-item dropdown" id="menu-conta" hidden>
+                        <button id="botao-conta" class="nav-link dropdown-toggle btn btn-link d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" fill="currentColor"/></svg>
+                            <span id="nome-usuario"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="favoritos.html">Meus favoritos</a></li>
+                            <li id="item-painel" hidden><a class="dropdown-item" href="painel-farmacia.html">Painel da farmácia</a></li>
+                            <li id="item-admin" hidden><a class="dropdown-item" href="admin.html">Área do administrador</a></li>
+                            <li><a class="dropdown-item" href="conta.html">Minha conta</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item" id="botao-sair-menu">Sair</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item py-2 py-lg-0">
+                        <div class="dropdown">
+                            <button id="botao-tema" type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">Tema: claro</button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><button type="button" class="dropdown-item" data-tema="sistema">Sistema</button></li>
+                                <li><button type="button" class="dropdown-item" data-tema="claro">Claro</button></li>
+                                <li><button type="button" class="dropdown-item" data-tema="escuro">Escuro</button></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <main>
+    <section id="inicio" class="barra-busca border-bottom bg-body">
+        <div class="container-fluid px-3 px-lg-4 py-3">
+            <h1 class="visually-hidden">Farmácias e UBS de Sorocaba e Votorantim</h1>
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-7">
+                    <form id="form-topo" novalidate data-busca-endereco>
+                        <label for="campo-endereco-topo" class="form-label fw-semibold mb-1">Onde você está?</label>
+                        <div class="input-group input-group-lg">
+                            <input id="campo-endereco-topo" type="search" class="form-control" autocomplete="off"
+                                   placeholder="Endereço, bairro ou CEP" role="combobox" aria-expanded="false"
+                                   aria-autocomplete="list" aria-controls="sugestoes-endereco-topo" aria-activedescendant=""
+                                   aria-describedby="erro-endereco-topo">
+                            <button type="submit" class="btn btn-primary px-4">Buscar</button>
+                        </div>
+                        <div id="erro-endereco-topo" class="invalid-feedback"></div>
+                        <ul id="sugestoes-endereco-topo" class="list-group mt-1 shadow-sm" role="listbox"
+                            aria-label="Endereços encontrados" hidden></ul>
+                        <p id="contagem-endereco-topo" class="visually-hidden" aria-live="polite"></p>
+                    </form>
+                </div>
+                <div class="col-lg-5 d-flex flex-wrap gap-2">
+                    <div class="d-flex flex-fill gap-2" role="group" aria-label="Mostrar no mapa">
+                        <button type="button" class="btn btn-lg btn-outline-primary active flex-fill" data-filtro="farmacia"
+                                data-rotulo="Farmácias" aria-pressed="true">✓ Farmácias</button>
+                        <button type="button" class="btn btn-lg btn-outline-primary active flex-fill" data-filtro="ubs"
+                                data-rotulo="UBS" aria-pressed="true">✓ UBS</button>
+                    </div>
+                    <button type="button" class="btn btn-lg btn-outline-primary flex-fill" data-localizacao>Usar minha localização</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="buscar" class="secao-mapa">
+        <div class="container-fluid px-3 px-lg-4 py-3">
+            <div class="d-flex flex-column flex-lg-row gap-3">
+                <div class="mapa-area flex-grow-1 rounded-4 overflow-hidden shadow-sm">
+                    <div id="mapa"></div>
+                    <div id="carregando-mapa" class="carregando-mapa d-flex align-items-center gap-2 small">
+                        <div class="spinner-border spinner-border-sm" aria-hidden="true"></div>
+                        <span>Carregando o mapa…</span>
+                    </div>
+                    <aside class="legenda card" data-obstaculo aria-label="Legenda do mapa">
+                        <div class="card-body d-flex flex-wrap gap-2 gap-sm-3 py-1 py-sm-2 px-2 px-sm-3 small">
+                            <div class="d-flex align-items-center gap-2"><span class="bolinha bolinha-farmacia" aria-hidden="true"></span> Farmácia</div>
+                            <div class="d-flex align-items-center gap-2"><svg width="14" height="18" viewBox="0 0 64 80" aria-hidden="true"><path d="M32 78 C20 60 6 48 6 30 a26 26 0 0 1 52 0 C58 48 44 60 32 78Z" fill="#7A869A"/><circle cx="32" cy="28" r="26" fill="#E8304D"/><rect x="19" y="15" width="26" height="26" rx="5" fill="none" stroke="#fff" stroke-width="3"/><path d="M29 20h6v6h6v6h-6v6h-6v-6h-6v-6h6z" fill="#fff"/></svg> UBS</div>
+                            <div class="d-flex align-items-center gap-2"><span class="bolinha bolinha-resultado" aria-hidden="true"></span> <span class="d-none d-sm-inline">Resultado da busca</span><span class="d-sm-none">Busca</span></div>
+                            <div class="d-flex align-items-center gap-2"><span class="bolinha bolinha-usuario" aria-hidden="true"></span> Você</div>
+                        </div>
+                    </aside>
+                </div>
+
+                <aside class="lateral-mapa card border-0 shadow-sm rounded-4" data-obstaculo>
+                    <div class="card-body d-flex flex-column gap-3 p-3">
+                        <div class="rounded-3 bg-body-tertiary p-3">
+                            <p id="rotulo-localizacao" class="fw-semibold mb-2">Sem localização: usando o centro de Sorocaba</p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button id="botao-marcar" type="button" class="btn btn-outline-primary" aria-pressed="false">Marcar no mapa</button>
+                                <button id="botao-alterar" type="button" class="btn btn-outline-primary">Alterar</button>
+                            </div>
+                        </div>
+
+                        <h2 class="h4 fw-bold mb-0">Mais perto de você</h2>
+                        <div id="aviso" class="alert alert-info py-2 mb-0 small" role="status" hidden></div>
+                        <p id="contagem-locais" class="small text-body-secondary mb-0" aria-live="polite"></p>
+                        <ol id="lista-locais" class="list-group list-group-flush lista-locais"></ol>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+    <section id="remedio" class="secao bg-body-tertiary">
+        <div class="container py-5">
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <h2 class="h3 fw-bold">Remédio e preço</h2>
+                    <p class="text-body-secondary">Escolha o remédio para ver as farmácias com ele em estoque informado e o preço de cada uma. Uma busca por vez: escolher outro remédio troca o atual.</p>
+                    <div class="alert alert-warning small" role="note">
+                        Os preços cadastrados hoje são <strong>de exemplo (fictícios)</strong>. O preço real depende do cadastro de cada farmácia; nenhuma fonte oficial informa preço ou estoque.
+                    </div>
+                    <form id="form-remedio" class="card card-body border-0 shadow-sm rounded-4 p-4" novalidate>
+                        <label for="campo-remedio" class="form-label fw-semibold">Qual remédio você procura?</label>
+                        <input id="campo-remedio" type="search" class="form-control" autocomplete="off"
+                               placeholder="Digite o nome, ex.: losartana" aria-describedby="erro-remedio">
+                        <div id="erro-remedio" class="invalid-feedback"></div>
+                        <ul id="sugestoes" class="list-group mt-1" hidden></ul>
+                        <div id="escolhidos" class="d-flex flex-wrap gap-1 my-2"></div>
+                        <div class="mb-3">
+                            <label for="select-ordem" class="form-label small fw-semibold">Ordenar por</label>
+                            <select id="select-ordem" class="form-select form-select-sm">
+                                <option value="preco">Menor preço</option>
+                                <option value="distancia">Mais perto</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Buscar preços</button>
+                    </form>
+                </div>
+                <div class="col-lg-7">
+                    <div id="aviso-remedio" class="alert alert-danger" role="alert" hidden></div>
+                    <div id="favorito-remedio" class="mb-3"></div>
+                    <p id="mensagem-precos" class="fw-semibold mb-3" aria-live="polite"></p>
+                    <ol id="lista-precos" class="list-unstyled mb-0"></ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    </main>
+
+    <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3">
+        <div id="toast-entrou" class="toast align-items-center text-bg-success border-0" role="status" aria-live="polite" aria-atomic="true" data-bs-delay="4000">
+            <div class="d-flex"><div class="toast-body fs-6" id="texto-toast"></div></div>
+        </div>
+    </div>
+
+    <footer class="border-top py-4 bg-body">
+        <div class="container d-flex flex-wrap justify-content-between gap-2 small text-body-secondary">
+            <span>Dados: Receita Federal, CNES (DataSUS), IBGE e OpenStreetMap.</span>
+            <a href="sobre.html">Sobre os dados e a privacidade</a>
+        </div>
+    </footer>
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.33.0/mapbox-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- as chaves ficam em config.js, fora do git -->
+    <script src="js/config.js?v=20261022b3"></script>
+    <script src="js/horario.js?v=20261022b3"></script>
+    <script src="js/api.js?v=20261022b3"></script>
+    <script src="js/formulario.js?v=20261022b3"></script>
+    <script src="js/favoritos.js?v=20261022b3"></script>
+    <script src="js/fachada.js?v=20261022b3"></script>
+    <script src="js/balao.js?v=20261022b3"></script>
+    <script src="js/mapa.js?v=20261022b3"></script>
+    <script src="js/busca-endereco.js?v=20261022b3"></script>
+    <script src="js/busca-remedio.js?v=20261022b3"></script>
+    <script src="js/remedio-precos.js?v=20261022b3"></script>
+    <script src="js/tema.js?v=20261022b3"></script>
+    <script src="js/app.js?v=20261022b3"></script>
+    <script src="js/sessao.js?v=20261022b3"></script>
+    <script>Sessao.iniciar(); Sessao.avisarEntrada();</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# Arquivos do Windows e do editor
+Thumbs.db
+.vscode/
+
+# Logs e variáveis de ambiente (senhas e chaves nunca entram no git)
+*.log
+.env
+
+# Chave local do Mapbox (site/js/config.js) e saída da compilação do servidor
+site/js/config.js
+servidor/out/

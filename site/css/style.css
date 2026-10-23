@@ -1,0 +1,453 @@
+/* letra de 18px: o público é idoso */
+
+:root,
+[data-bs-theme="light"] {
+    --bs-primary: #D93B43;
+    --bs-primary-rgb: 217, 59, 67;
+    --bs-info-rgb: 140, 200, 255;
+    --bs-link-color-rgb: 20, 100, 159;
+    --bs-body-font-size: 1.125rem;
+    --bs-btn-font-size: 1.125rem;
+    --vermelho: #D93B43;
+    --vermelho-escuro: #B92F36;
+    --vermelho-texto: #B92F36;
+    --texto-sobre-vermelho: #fff;
+    --azul-destaque: #14649F;
+    --azul-fundo: rgba(20, 100, 159, 0.12);
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: #1C1E23;
+    --bs-body-bg-rgb: 28, 30, 35;
+    --bs-tertiary-bg: #24272D;
+    --bs-tertiary-bg-rgb: 36, 39, 45;
+    --bs-link-color-rgb: 140, 200, 255;
+    --bs-primary: #FF7A80;
+    --bs-primary-rgb: 255, 122, 128;
+    /* no escuro o vermelho clareia, senão o contraste cai */
+    --vermelho: #FF7A80;
+    --vermelho-escuro: #FFA0A5;
+    --vermelho-texto: #FF7A80;
+    --texto-sobre-vermelho: #1C1E23;
+    --azul-destaque: #8CC8FF;
+    --azul-fundo: rgba(140, 200, 255, 0.16);
+}
+
+.btn-primary {
+    --bs-btn-color: var(--texto-sobre-vermelho);
+    --bs-btn-bg: var(--vermelho);
+    --bs-btn-border-color: var(--vermelho);
+    --bs-btn-hover-color: var(--texto-sobre-vermelho);
+    --bs-btn-hover-bg: var(--vermelho-escuro);
+    --bs-btn-hover-border-color: var(--vermelho-escuro);
+    --bs-btn-active-color: var(--texto-sobre-vermelho);
+    --bs-btn-active-bg: var(--vermelho-escuro);
+    --bs-btn-active-border-color: var(--vermelho-escuro);
+    --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+}
+
+/* o ✓ mostra o estado sem depender só da cor */
+.btn-outline-primary {
+    --bs-btn-color: var(--vermelho-texto);
+    --bs-btn-border-color: var(--vermelho);
+    --bs-btn-hover-color: var(--texto-sobre-vermelho);
+    --bs-btn-hover-bg: var(--vermelho);
+    --bs-btn-hover-border-color: var(--vermelho);
+    --bs-btn-active-color: var(--texto-sobre-vermelho);
+    --bs-btn-active-bg: var(--vermelho);
+    --bs-btn-active-border-color: var(--vermelho);
+    --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary {
+    --bs-btn-color: #C5CAD0;
+    --bs-btn-border-color: #6c757d;
+}
+
+.btn-outline-info {
+    --bs-btn-color: var(--azul-destaque);
+    --bs-btn-border-color: var(--azul-destaque);
+    --bs-btn-hover-bg: var(--azul-fundo);
+    --bs-btn-hover-border-color: var(--azul-destaque);
+    --bs-btn-hover-color: var(--azul-destaque);
+    --bs-btn-active-bg: var(--azul-fundo);
+    --bs-btn-active-border-color: var(--azul-destaque);
+    --bs-btn-active-color: var(--azul-destaque);
+    --bs-btn-focus-shadow-rgb: 140, 200, 255;
+}
+
+.btn,
+.form-control,
+.form-select,
+.nav-link,
+.dropdown-item,
+.list-group-item-action {
+    min-height: 44px;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-brand,
+footer a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+}
+
+:focus-visible {
+    outline: 3px solid var(--azul-destaque);
+    outline-offset: 2px;
+}
+
+.badge {
+    font-size: 0.875rem;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* o título não some embaixo do header fixo */
+section[id] {
+    scroll-margin-top: 72px;
+}
+
+.cruz {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    color: var(--bs-primary);
+}
+
+/* mapa */
+.mapa-area {
+    position: relative;
+    height: 55vh;
+    min-height: 320px;
+}
+
+#mapa {
+    position: absolute;
+    inset: 0;
+}
+
+.carregando-mapa {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    z-index: 2;
+    transform: translateX(-50%);
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* o hidden precisa vencer o d-flex do Bootstrap */
+.carregando-mapa[hidden] {
+    display: none !important;
+}
+
+.lateral-mapa {
+    background: var(--bs-body-bg);
+}
+
+.botao-local {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    border: 0;
+    background: none;
+    color: var(--bs-body-color);
+    text-align: start;
+}
+
+.botao-local:hover {
+    background: var(--bs-tertiary-bg);
+}
+
+.tipo-farmacia {
+    background-color: var(--vermelho);
+    color: var(--texto-sobre-vermelho);
+}
+
+.tipo-ubs {
+    background-color: #5B6577;
+    color: #fff;
+}
+
+.card-preco {
+    transition: box-shadow 0.2s ease;
+}
+
+.card-preco:hover {
+    box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.12) !important;
+}
+
+.preco {
+    color: var(--bs-primary);
+    white-space: nowrap;
+}
+
+.btn-close-sm {
+    width: 44px;
+    height: 44px;
+    margin: -12px -12px -12px 0;
+    padding: 0;
+    background-size: 0.6rem;
+}
+
+@media (min-width: 992px) {
+    .mapa-area {
+        height: calc(100vh - 250px);
+        min-height: 420px;
+    }
+
+    .lateral-mapa {
+        flex: 0 0 380px;
+        height: calc(100vh - 250px);
+        min-height: 420px;
+        overflow: hidden;
+    }
+
+    .lateral-mapa > .card-body {
+        overflow-y: auto;
+        min-height: 0;
+    }
+}
+
+.legenda {
+    position: absolute;
+    right: 12px;
+    bottom: 40px;
+    z-index: 2;
+    max-width: calc(100% - 24px);
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .legenda {
+        right: auto;
+        left: 12px;
+        bottom: 36px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .mapa-area {
+        display: flex;
+        flex-direction: column;
+    }
+
+    #mapa {
+        position: relative;
+        inset: auto;
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .legenda {
+        position: relative;
+        right: auto;
+        bottom: auto;
+        max-width: none;
+        border-width: 0;
+        border-top: 1px solid var(--bs-border-color-translucent);
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
+
+.bolinha {
+    display: inline-block;
+    flex: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid #fff;
+    box-sizing: border-box;
+}
+
+.bolinha-farmacia {
+    background: var(--bs-primary);
+}
+
+.bolinha-resultado {
+    width: 16px;
+    height: 16px;
+    background: var(--bs-primary);
+    border-width: 3px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.bolinha-usuario {
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border: 3px solid var(--azul-destaque);
+}
+
+.marcador-usuario {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 4px solid var(--azul-destaque);
+    box-sizing: border-box;
+    box-shadow: 0 0 0 6px rgba(140, 200, 255, 0.25), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+body.marcando,
+body.marcando .mapboxgl-canvas-container {
+    cursor: crosshair !important;
+}
+
+/* balão */
+.cartao {
+    position: fixed;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    width: min(340px, 92vw);
+    border-radius: 16px;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+        /* sombra em vez de borda: a ponta fica na medida exata */
+    box-shadow: 0 0 0 1px var(--bs-border-color-translucent), 0 12px 36px rgba(0, 0, 0, 0.4);
+}
+
+.cartao:focus {
+    outline: none;
+}
+
+.cartao.cartao-painel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-height: 62vh;
+    overflow-y: auto;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35);
+    z-index: 1040;
+}
+
+.cartao.cartao-painel .cartao-ponta {
+    display: none;
+}
+
+.cartao-ponta {
+    position: absolute;
+    width: 14px;
+    height: 12px;
+    pointer-events: none;
+}
+
+.cartao-ponta-fundo {
+    fill: var(--bs-body-bg);
+}
+
+.cartao-ponta-contorno {
+    fill: none;
+    stroke: var(--bs-border-color-translucent);
+    stroke-width: 1;
+}
+
+.cartao[data-lado="cima"] .cartao-ponta {
+    left: calc(var(--tx, 0px) - 7px);
+    top: 100%;
+}
+
+.cartao[data-lado="baixo"] .cartao-ponta {
+    left: calc(var(--tx, 0px) - 7px);
+    top: -12px;
+    transform: rotate(180deg);
+}
+
+.cartao[data-lado="direita"] .cartao-ponta {
+    left: -13px;
+    top: calc(var(--ty, 0px) - 6px);
+    transform: rotate(90deg);
+}
+
+.cartao[data-lado="esquerda"] .cartao-ponta {
+    left: calc(100% - 1px);
+    top: calc(var(--ty, 0px) - 6px);
+    transform: rotate(-90deg);
+}
+
+.cartao-topo {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.25rem 0.25rem 0 0.75rem;
+}
+
+.cartao-abas {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.cartao-aba {
+    max-width: 100%;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.875rem;
+    text-align: left;
+    white-space: normal;
+}
+
+.cartao-aba[aria-pressed="true"] {
+    background: var(--azul-fundo);
+}
+
+.cartao-fechar {
+    flex: none;
+    width: 44px;
+    height: 44px;
+}
+
+.cartao-corpo {
+    padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.cartao-titulo {
+    margin: 0 0 0.25rem;
+    line-height: 1.25;
+}
+
+.cartao-endereco,
+.cartao-telefone {
+    line-height: 1.4;
+}
+
+.cartao-acoes a {
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.cartao-foto img {
+    height: 110px;
+    object-fit: cover;
+}
+
+.cartao-foto figcaption {
+    margin-top: 0.15rem;
+}
+
+.cartao a:not(.btn) {
+    color: var(--azul-destaque);
+}
+
+.cartao small,
+.cartao .badge,
+.cartao figcaption {
+    font-size: 0.875rem;
+}
