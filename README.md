@@ -1,8 +1,10 @@
 # Farmácia Digital
 
-Mapa das farmácias e UBS de Sorocaba e Votorantim, com busca por endereço, horário de funcionamento e preço de remédios. Tem também login: cidadãos salvam favoritos, farmácias informam preços, e o administrador aprova as farmácias.
+Mapa das farmácias de Sorocaba e Votorantim, com destaque para as 117 do Farmácia Popular entre as 378 farmácias reais, com busca por endereço, horário de funcionamento e preço de remédios. Tem também login: cidadãos salvam favoritos, farmácias informam preços, e o administrador aprova as farmácias.
 
 **Atenção:** os preços e estoques de exemplo são **fictícios**. Nenhuma fonte oficial informa preço ou estoque.
+
+**Farmácia Popular:** o programa é uma rede de farmácias credenciadas do governo federal. O mapa destaca as 117 farmácias do programa (102 em Sorocaba e 15 em Votorantim) entre as 378 farmácias reais. Fonte: Ministério da Saúde (painel Farmácia Popular do Brasil, dados até 28/10/2026). Confirme na farmácia o que está disponível e as regras.
 
 ## 🧠 Tecnologias
 - **Servidor:** Java puro (`com.sun.net.httpserver`), sem framework e sem Maven. Conexão com o banco por JDBC.
@@ -18,7 +20,7 @@ Mapa das farmácias e UBS de Sorocaba e Votorantim, com busca por endereço, hor
 ## ▶️ Como rodar
 1. Crie o banco `farmaciadigital` no PostgreSQL.
 2. Rode os scripts de `banco/`, nesta ordem (todos podem ser rodados de novo):
-   1. `tabela.sql`, `dados.sql`, `precos.sql`, `farmacias_reais.sql`, `ubs.sql`, `horarios.sql` (dados do mapa);
+   1. `tabela.sql`, `dados.sql`, `precos.sql`, `farmacias_reais.sql`, depois `farmacia_popular.sql` (marca as farmácias do Farmácia Popular; precisa vir depois de `farmacias_reais.sql`), `ubs.sql` (a tabela `ubs` continua no banco, mas o site não usa mais) e `horarios.sql` (dados do mapa);
    2. `login.sql` (tabelas do login, favoritos, pedidos de farmácia e recuperação de senha);
    3. `demo.sql` **só para demonstração** (veja abaixo).
    4. `consultas.sql` é **opcional**: só consultas de leitura de exemplo, para ver os dados do banco. Não altera nada.
@@ -86,7 +88,7 @@ Sem `config.js` a página mostra o aviso de que a chave do mapa falta.
 - `Rotas.java`: consultas do mapa, de medicamentos, de preços e do catálogo.
 - `Login.java`: cadastro, entrar, sair, quem está logado, apagar conta e a regra de administrador.
 - `RedefinirSenha.java`: trocar senha e recuperação de senha por link.
-- `Favoritos.java`: favoritos de farmácias, UBS e remédios.
+- `Favoritos.java`: favoritos de farmácias e remédios.
 - `PainelFarmacia.java`: pedido de acesso da farmácia e o painel de preços.
 - `Admin.java`: área do administrador (resumo e decisões sobre os pedidos).
 - `Senha.java`: senha com PBKDF2 e sal aleatório.
@@ -96,7 +98,7 @@ Sem `config.js` a página mostra o aviso de que a chave do mapa falta.
 - `testes/TesteSimples.java`: os testes, sem framework.
 
 ## 🧭 Páginas
-- `index.html`: o mapa, a lista de farmácias e UBS, e "Remédio e preço".
+- `index.html`: o mapa, a lista de farmácias (com o selo Farmácia Popular), e "Remédio e preço".
 - `entrar.html`, `cadastro.html`, `esqueci-senha.html`, `redefinir-senha.html`, `conta.html`: login, cadastro e senha.
 - `favoritos.html`, `farmacia-acesso.html`, `painel-farmacia.html`: favoritos, pedido de acesso e painel da farmácia.
 - `admin.html`: área do administrador. `remedios.html`: remédios cadastrados (com o selo de origem).

@@ -17,7 +17,7 @@ public class Rotas {
                    CAST(latitude AS DOUBLE PRECISION) AS latitude,
                    CAST(longitude AS DOUBLE PRECISION) AS longitude,
                    'farmacia' AS tipo, cidade, tipo AS tipo_farmacia, precisao_posicao,
-                   (cidade IS NULL) AS exemplo,
+                   (cidade IS NULL) AS exemplo, credenciada AS popular,
                    COALESCE(horario_funcionamento,
                        CASE WHEN hora_abertura IS NOT NULL AND hora_fechamento IS NOT NULL
                             THEN 'Mo-Su ' || to_char(hora_abertura, 'HH24:MI') || '-' || to_char(hora_fechamento, 'HH24:MI')
@@ -27,13 +27,6 @@ public class Rotas {
                        CASE WHEN hora_abertura IS NOT NULL THEN 'Dados fictícios (exemplo)' END) AS fonte_horario
             FROM farmacia
             WHERE latitude IS NOT NULL   -- farmácia aprovada sem posição não aparece no mapa
-            UNION ALL
-            SELECT id, nome, endereco,
-                   CAST(latitude AS DOUBLE PRECISION) AS latitude,
-                   CAST(longitude AS DOUBLE PRECISION) AS longitude,
-                   'ubs' AS tipo, cidade, NULL AS tipo_farmacia, precisao_posicao, NULL AS exemplo,
-                   horario_funcionamento, telefone, fonte_horario
-            FROM ubs
             """;
 
     private static final String SQL_MEDICAMENTOS = """
@@ -88,8 +81,8 @@ public class Rotas {
                 ponto.put("cidade", linhas.getString("cidade"));
                 ponto.put("tipoFarmacia", linhas.getString("tipo_farmacia"));
                 ponto.put("precisaoPosicao", linhas.getString("precisao_posicao"));
-                // getObject: UBS não tem a flag, e getBoolean trocaria null por false
-                ponto.put("exemplo", linhas.getObject("exemplo", Boolean.class));
+                ponto.put("exemplo", linhas.getBoolean("exemplo"));
+                ponto.put("popular", linhas.getBoolean("popular"));
                 ponto.put("horarioFuncionamento", linhas.getString("horario_funcionamento"));
                 ponto.put("telefone", linhas.getString("telefone"));
                 ponto.put("fonteHorario", linhas.getString("fonte_horario"));

@@ -41,9 +41,6 @@ class Favoritos {
         dados.put("farmacias", consultar(
                 "SELECT f.id, f.nome, f.endereco FROM favorito_farmacia x JOIN farmacia f ON f.id = x.farmacia_id "
                 + "WHERE x.conta_id = ? ORDER BY f.nome", sessao.contaId()));
-        dados.put("ubs", consultar(
-                "SELECT u.id, u.nome, u.endereco FROM favorito_ubs x JOIN ubs u ON u.id = x.ubs_id "
-                + "WHERE x.conta_id = ? ORDER BY u.nome", sessao.contaId()));
         dados.put("medicamentos", consultar(
                 "SELECT m.id, m.nome FROM favorito_medicamento x JOIN medicamento m ON m.id = x.medicamento_id "
                 + "WHERE x.conta_id = ? ORDER BY m.nome", sessao.contaId()));
@@ -102,7 +99,6 @@ class Favoritos {
     private static String[] tabelasDo(String tipo) {
         return switch (tipo) {
             case "farmacia" -> new String[] {"favorito_farmacia", "farmacia_id", "farmacia"};
-            case "ubs" -> new String[] {"favorito_ubs", "ubs_id", "ubs"};
             case "medicamento" -> new String[] {"favorito_medicamento", "medicamento_id", "medicamento"};
             default -> throw new IllegalArgumentException("Tipo de favorito inválido.");
         };

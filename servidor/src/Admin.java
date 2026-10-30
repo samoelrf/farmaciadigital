@@ -201,7 +201,7 @@ class Admin {
 
     private static long criarFarmacia(Connection conexao, Pedido pedido) throws SQLException {
         try (PreparedStatement comando = conexao.prepareStatement(
-                "INSERT INTO farmacia (nome, endereco, cnpj, telefone, cidade) VALUES (?, ?, ?, ?, ?) RETURNING id")) {
+                "INSERT INTO farmacia (nome, endereco, cnpj, telefone, cidade, credenciada) VALUES (?, ?, ?, ?, ?, FALSE) RETURNING id")) {
             comando.setString(1, pedido.nomeInformado());
             comando.setString(2, pedido.enderecoInformado());
             comando.setString(3, pedido.cnpj());

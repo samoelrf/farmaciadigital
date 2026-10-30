@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sobre os dados · Farmácia Digital</title>
-    <meta name="description" content="De onde vêm os dados de farmácias e UBS, o que significam os avisos do mapa, o que não podemos afirmar e como tratamos a privacidade.">
+    <meta name="description" content="De onde vêm os dados das farmácias e do Farmácia Popular, o que significam os avisos do mapa, o que não podemos afirmar e como tratamos a privacidade.">
     <script>
         (function () {
             try {
@@ -69,7 +69,7 @@
 
     <main class="container py-5" style="max-width: 880px;">
         <h1 class="display-6 fw-bold mb-3">Sobre os dados</h1>
-        <p class="lead text-body-secondary">De onde vêm as farmácias e as UBS do mapa, o que significam os avisos e o que ainda não podemos afirmar. Coleta feita em 15/10/2026.</p>
+        <p class="lead text-body-secondary">De onde vêm as farmácias do mapa e quais delas são do Farmácia Popular, o que significam os avisos e o que ainda não podemos afirmar. Coleta feita em 15/10/2026.</p>
 
         <section class="mt-5" aria-labelledby="numeros">
             <h2 id="numeros" class="h4 fw-bold">Os números</h2>
@@ -79,8 +79,8 @@
                     <span>farmácias: 323 em Sorocaba e 55 em Votorantim (376 empresas com CNPJ ativo e farmácia como atividade principal, mais 2 farmácias públicas do CNES).</span>
                 </div></div>
                 <div class="col-sm-6"><div class="card card-body border-0 shadow-sm rounded-4 h-100">
-                    <span class="display-6 fw-bold text-primary">49</span>
-                    <span>UBS: 33 em Sorocaba e 16 em Votorantim, conferidas entre o CNES e a lista do Ministério da Saúde.</span>
+                    <span class="display-6 fw-bold text-primary">117</span>
+                    <span>farmácias do Farmácia Popular entre as 378 farmácias reais: 102 em Sorocaba e 15 em Votorantim. O Farmácia Popular é um programa do governo federal com uma rede de farmácias credenciadas. Confirme na farmácia o que está disponível e as regras.</span>
                 </div></div>
             </div>
             <p class="mt-3">Das 378 farmácias, <strong>245 (65%)</strong> estão no ponto exato do endereço ou foram confirmadas por fontes. <strong>54 (14%)</strong> têm posição estimada pelos vizinhos do IBGE: no mapa aparecem sem foto da fachada. <strong>79 (21%)</strong> estão só na rua, no CEP ou com uma única fonte: aparecem marcadas como <em>localização aproximada</em>.</p>
@@ -90,11 +90,11 @@
             <h2 id="fontes" class="h4 fw-bold">De onde vêm os dados</h2>
             <ul class="list-group list-group-flush mt-3">
                 <li class="list-group-item bg-transparent px-0"><strong>Receita Federal</strong> (CNPJ Dados Abertos, competência 10/2026): quais farmácias existem, com CNPJ ativo, atividade, endereço e CEP.</li>
-                <li class="list-group-item bg-transparent px-0"><strong>CNES, DataSUS / Ministério da Saúde</strong>: UBS ativas, farmácias cadastradas, coordenadas e contatos. Também a lista nacional de UBS, para conferência.</li>
+                <li class="list-group-item bg-transparent px-0"><strong>CNES, DataSUS / Ministério da Saúde</strong>: farmácias cadastradas, coordenadas e contatos.</li>
                 <li class="list-group-item bg-transparent px-0"><strong>IBGE</strong>: endereços do Censo 2022 (CNEFE), usados para a coordenada de cada número, e os contornos oficiais de Sorocaba e Votorantim.</li>
                 <li class="list-group-item bg-transparent px-0"><strong>OpenStreetMap</strong> (comunidade, licença ODbL): ajuda a confirmar a posição. Nunca é a única prova de que uma farmácia existe.</li>
                 <li class="list-group-item bg-transparent px-0"><strong>Nominatim e BrasilAPI</strong>: posição aproximada pela rua ou pelo CEP, quando as outras fontes não cobrem o endereço.</li>
-                <li class="list-group-item bg-transparent px-0"><strong>Prefeitura de Sorocaba (Portal 156)</strong>: conferência do número de UBS (a Prefeitura também fala em 33 em Sorocaba).</li>
+                <li class="list-group-item bg-transparent px-0"><strong>Ministério da Saúde (painel Farmácia Popular do Brasil, dados até 28/10/2026)</strong>: quais farmácias fazem parte do programa Farmácia Popular.</li>
             </ul>
             <p class="small text-body-secondary mt-3">Detalhes e método completos estão no relatório de fontes do projeto (RELATORIO_FONTES_DOS_DADOS.md).</p>
         </section>
@@ -106,6 +106,8 @@
                 <dd class="col-sm-8">A posição foi achada só pela rua ou pelo CEP. O ponto fica na rua certa, mas pode estar a algumas centenas de metros do número. Nesses casos não mostramos foto da fachada.</dd>
                 <dt class="col-sm-4"><span class="badge text-bg-secondary">Dados de exemplo (fictícios)</span></dt>
                 <dd class="col-sm-8">Preços e estoques de exemplo, criados só para demonstrar a busca. Não são informações reais de nenhuma farmácia.</dd>
+                <dt class="col-sm-4"><span class="badge tipo-popular">Farmácia Popular</span></dt>
+                <dd class="col-sm-8">A farmácia faz parte da rede credenciada do programa Farmácia Popular, segundo o painel do Ministério da Saúde. Confirme na farmácia o que está disponível e as regras.</dd>
                 <dt class="col-sm-4"><span class="badge text-bg-secondary">Farmácia pública</span></dt>
                 <dd class="col-sm-8">Farmácia da rede pública cadastrada no CNES, como as de medicamentos de alto custo.</dd>
                 <dt class="col-sm-4">Horário não informado</dt>

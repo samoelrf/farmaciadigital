@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Meus favoritos · Farmácia Digital</title>
-    <meta name="description" content="Farmácias, UBS e remédios que você favoritou.">
+    <meta name="description" content="Farmácias e remédios que você favoritou.">
     <script>
         (function () {
             try {
@@ -79,11 +79,6 @@
             <ul id="lista-farmacia" class="list-group"></ul>
         </section>
         <section class="mb-4">
-            <h2 class="h4 fw-bold">UBS</h2>
-            <p id="vazio-ubs" class="text-body-secondary" hidden>Nenhuma UBS favoritada.</p>
-            <ul id="lista-ubs" class="list-group"></ul>
-        </section>
-        <section class="mb-4">
             <h2 class="h4 fw-bold">Remédios</h2>
             <p id="vazio-medicamento" class="text-body-secondary" hidden>Nenhum remédio favoritado.</p>
             <ul id="lista-medicamento" class="list-group"></ul>
@@ -105,7 +100,7 @@
         new Tema(document.getElementById("botao-tema"), [...document.querySelectorAll("[data-tema]")]);
         Sessao.iniciar();
         // Lista os favoritos (textContent em tudo) e deixa remover cada um
-        const rotulos = { farmacia: "Farmácia", ubs: "UBS", medicamento: "Remédio" };
+        const rotulos = { farmacia: "Farmácia", medicamento: "Remédio" };
         function mostrarAviso(texto) {
             const aviso = document.getElementById("aviso");
             aviso.textContent = texto;
@@ -131,7 +126,7 @@
             ver.className = "btn btn-sm btn-outline-info rounded-pill";
             ver.textContent = tipo === "medicamento" ? "Ver preços" : "Ver no mapa";
             ver.href = tipo === "medicamento" ? "index.html#remedio"
-                : (tipo === "farmacia" ? `index.html?ponto=${item.id}` : `index.html?ubs=${item.id}`);
+                : `index.html?ponto=${item.id}`;
             const remover = document.createElement("button");
             remover.type = "button";
             remover.className = "btn btn-sm btn-outline-primary rounded-pill";
@@ -154,7 +149,6 @@
         }
         function conferirVazio() {
             document.getElementById("vazio-farmacia").hidden = document.getElementById("lista-farmacia").children.length > 0;
-            document.getElementById("vazio-ubs").hidden = document.getElementById("lista-ubs").children.length > 0;
             document.getElementById("vazio-medicamento").hidden = document.getElementById("lista-medicamento").children.length > 0;
         }
         fetch("/api/favoritos").then(async (resposta) => {
@@ -167,7 +161,7 @@
                 return;
             }
             const dados = await resposta.json();
-            [["farmacia", "lista-farmacia", dados.farmacias], ["ubs", "lista-ubs", dados.ubs],
+            [["farmacia", "lista-farmacia", dados.farmacias],
              ["medicamento", "lista-medicamento", dados.medicamentos]].forEach(([tipo, id, itens]) => {
                 itens.forEach((item) => document.getElementById(id).appendChild(criarLinha(tipo, item)));
             });

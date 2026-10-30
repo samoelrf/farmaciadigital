@@ -15,7 +15,7 @@ class Mapa {
         this.ponteiroInicio = null;
         this.pinUsuario = null;
         this.pontos = [];
-        this.tipos = ["farmacia", "ubs"];
+        this.tipos = ["farmacia", "popular"];
 
         this.mapa = new mapboxgl.Map({
             container,
@@ -169,7 +169,7 @@ class Mapa {
         });
     }
 
-    static desenharPinUbs() {
+    static desenharPinPopular() {
         const tela = document.createElement("canvas");
         tela.width = 64;
         tela.height = 80;
@@ -183,12 +183,12 @@ class Mapa {
         ctx.bezierCurveTo(58, 48, 44, 60, 32, 78);
         ctx.fill();
 
-        ctx.fillStyle = "#E8304D";
+        ctx.fillStyle = "#8CC8FF";
         ctx.beginPath();
         ctx.arc(32, 28, 26, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = "#fff";
+        ctx.strokeStyle = "#1C1E23";
         ctx.lineWidth = 3;
         const r = 5, x = 19, y = 15, s = 26;
         ctx.beginPath();
@@ -200,7 +200,7 @@ class Mapa {
         ctx.closePath();
         ctx.stroke();
 
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = "#1C1E23";
         ctx.fillRect(29, 20, 6, 18);
         ctx.fillRect(23, 26, 18, 6);
         return ctx.getImageData(0, 0, 64, 80);
@@ -221,6 +221,11 @@ class Mapa {
         return ctx.getImageData(0, 0, 36, 36);
     }
 
+    // popular é a farmácia do Farmácia Popular, as outras são só farmácia
+    static categoria(ponto) {
+        return ponto.popular === true ? "popular" : "farmacia";
+    }
+
     static montarGeoJson(pontos) {
         return {
             type: "FeatureCollection",
@@ -232,6 +237,7 @@ class Mapa {
                     nome: ponto.nome,
                     endereco: ponto.endereco,
                     tipo: ponto.tipo,
+                    popular: ponto.popular === true,
                     cidade: ponto.cidade,
                     tipoFarmacia: ponto.tipoFarmacia,
                     precisaoPosicao: ponto.precisaoPosicao,
@@ -246,14 +252,14 @@ class Mapa {
         };
     }
 
-    // farmácias e UBS são camadas, não marcadores HTML: assim agrupam em clusters
+    // farmácias são camadas, não marcadores HTML: assim agrupam em clusters
     adicionarPontos(pontos) {
         this.pontos = pontos;
-        this.mapa.addImage("icone-ubs", Mapa.desenharPinUbs(), { pixelRatio: 2 });
+        this.mapa.addImage("icone-popular", Mapa.desenharPinPopular(), { pixelRatio: 2 });
         this.mapa.addImage("icone-farmacia", Mapa.desenharPontoFarmacia(), { pixelRatio: 2 });
         this.mapa.addSource("pontos", {
             type: "geojson",
-            data: Mapa.montarGeoJson(pontos.filter((p) => this.tipos.includes(p.tipo))),
+            data: Mapa.montarGeoJson(pontos.filter((p) => this.tipos.includes(Mapa.categoria(p)))),
             cluster: true,
             clusterMaxZoom: 9,
             clusterRadius: 40,
@@ -287,7 +293,7 @@ class Mapa {
             id: "pontos-farmacias",
             type: "symbol",
             source: "pontos",
-            filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "tipo"], "farmacia"]],
+            filter: ["all", ["!", ["has", "point_count"]], ["!=", ["get", "popular"], true]],
             layout: {
                 "icon-image": "icone-farmacia",
                 "icon-size": ["interpolate", ["linear"], ["zoom"], 9, 0.4, 13, 0.8, 16, 1],
@@ -295,12 +301,12 @@ class Mapa {
             },
         });
         this.mapa.addLayer({
-            id: "pontos-unidades",
+            id: "pontos-populares",
             type: "symbol",
             source: "pontos",
-            filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "tipo"], "ubs"]],
+            filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "popular"], true]],
             layout: {
-                "icon-image": "icone-ubs",
+                "icon-image": "icone-popular",
                 "icon-anchor": "bottom",
                 "icon-size": ["interpolate", ["linear"], ["zoom"], 9, 0.5, 13, 0.85, 16, 1],
                 "icon-allow-overlap": true,
@@ -328,7 +334,7 @@ class Mapa {
             },
         });
 
-        ["pontos-clusters", "pontos-farmacias", "pontos-unidades"].forEach((camada) => {
+        ["pontos-clusters", "pontos-farmacias", "pontos-populares"].forEach((camada) => {
             this.mapa.on("mouseenter", camada, () => { this.mapa.getCanvas().style.cursor = "pointer"; });
             this.mapa.on("mouseleave", camada, () => { this.mapa.getCanvas().style.cursor = ""; });
         });
@@ -337,7 +343,7 @@ class Mapa {
     filtrarTipos(tipos) {
         this.tipos = tipos;
         if (!this.mapa.getSource("pontos")) return;
-        const visiveis = this.pontos.filter((p) => tipos.includes(p.tipo));
+        const visiveis = this.pontos.filter((p) => tipos.includes(Mapa.categoria(p)));
         this.mapa.getSource("pontos").setData(Mapa.montarGeoJson(visiveis));
     }
 
@@ -360,7 +366,7 @@ class Mapa {
             return;
         }
 
-        const unidades = this.mapa.queryRenderedFeatures(caixa, { layers: ["pontos-farmacias", "pontos-unidades"] });
+        const unidades = this.mapa.queryRenderedFeatures(caixa, { layers: ["pontos-farmacias", "pontos-populares"] });
         if (unidades.length === 0) {
             this.aoClicarVazio();
             return;

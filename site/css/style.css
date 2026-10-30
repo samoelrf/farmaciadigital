@@ -176,9 +176,9 @@ section[id] {
     color: var(--texto-sobre-vermelho);
 }
 
-.tipo-ubs {
-    background-color: #5B6577;
-    color: #fff;
+.tipo-popular {
+    background-color: var(--azul-destaque);
+    color: var(--texto-sobre-vermelho);
 }
 
 .card-preco {
