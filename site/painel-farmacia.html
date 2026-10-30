@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Painel da farmácia · Farmácia Digital</title>
-    <meta name="description" content="Remédios e preços informados pela farmácia.">
+    <meta name="description" content="Estoque, preços e serviços gratuitos informados pela farmácia.">
     <script>
         (function () {
             try {
@@ -67,48 +67,188 @@
         </div>
     </header>
 
-    <main class="container py-4 py-lg-5" style="max-width: 800px;">
+    <main class="container py-4 py-lg-5" style="max-width: 960px;">
         <h1 class="display-6 fw-bold mb-1">Painel da farmácia</h1>
         <p id="nome-farmacia" class="lead text-body-secondary mb-4"></p>
         <div id="sem-entrar" class="alert alert-warning" hidden>
             Entre na sua conta para ver o painel. <a href="entrar.html?voltar=%2Fpainel-farmacia.html" class="alert-link">Entrar</a>
         </div>
         <div id="sem-acesso" class="alert alert-warning" hidden>
-            Você ainda não tem acesso aprovado a uma farmácia. <a href="farmacia-acesso.html" class="alert-link">Pedir acesso</a>
+            Você ainda não tem uma farmácia cadastrada. <a href="farmacia-acesso.html" class="alert-link">Cadastrar farmácia</a>
+        </div>
+        <div id="aviso-pendente" class="alert alert-warning" role="status" hidden>
+            <strong>Cadastro em análise.</strong> Você já pode lançar o estoque e os serviços gratuitos. A farmácia só aparece no mapa e nas buscas depois que a nossa equipe aprovar.
         </div>
         <div id="aviso-posicao" class="alert alert-info" role="status" hidden>Sua farmácia ainda não aparece no mapa. Os preços aparecem na busca de remédios.</div>
         <div id="aviso" class="alert alert-danger" role="alert" hidden></div>
+        <div id="aviso-ok" class="alert alert-success" role="status" hidden></div>
+
         <div id="conteudo" hidden>
-            <form id="form-remedio" class="card card-body border-0 shadow-sm rounded-4 p-4 mb-4" novalidate>
-                <h2 class="h5 fw-bold">Adicionar ou alterar um remédio</h2>
-                <div class="input-group mb-2">
-                    <input id="busca-remedio" type="search" class="form-control" placeholder="Nome do remédio, ex.: dipirona">
-                    <button id="botao-buscar" type="button" class="btn btn-outline-primary">Buscar</button>
-                </div>
-                <div class="mb-3">
-                    <label for="medicamento" class="form-label fw-semibold">Remédio</label>
-                    <select id="medicamento" class="form-select" required>
-                        <option value="">Busque o remédio acima</option>
-                    </select>
-                </div>
-                <div class="row g-3 mb-3">
-                    <div class="col-sm-6">
-                        <label for="preco" class="form-label fw-semibold">Preço (R$)</label>
-                        <input id="preco" type="text" class="form-control" inputmode="decimal" placeholder="12,50" required>
+            <ul class="nav nav-tabs mb-4" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="guia-estoque" data-bs-toggle="tab" data-bs-target="#aba-estoque"
+                            type="button" role="tab" aria-controls="aba-estoque" aria-selected="true">Estoque</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="guia-servicos" data-bs-toggle="tab" data-bs-target="#aba-servicos"
+                            type="button" role="tab" aria-controls="aba-servicos" aria-selected="false">Serviços gratuitos</button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- ===== ESTOQUE ===== -->
+                <section class="tab-pane fade show active" id="aba-estoque" role="tabpanel" aria-labelledby="guia-estoque">
+                    <div id="resumo-estoque" class="d-flex flex-wrap gap-2 mb-3"></div>
+
+                    <form id="form-lote" class="card card-body border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <h2 class="h5 fw-bold">Adicionar ou alterar um lote</h2>
+                        <div id="editando-lote" class="alert alert-secondary d-flex flex-wrap justify-content-between align-items-center gap-2 py-2" hidden>
+                            <span id="texto-editando-lote"></span>
+                            <button id="cancelar-lote" type="button" class="btn btn-sm btn-outline-secondary rounded-pill">Cancelar</button>
+                        </div>
+
+                        <div id="bloco-escolha">
+                            <div class="input-group mb-2">
+                                <input id="busca-remedio" type="search" class="form-control" placeholder="Nome do remédio, ex.: dipirona">
+                                <button id="botao-buscar" type="button" class="btn btn-outline-primary">Buscar</button>
+                            </div>
+                            <div class="mb-2">
+                                <label for="medicamento" class="form-label fw-semibold">Remédio</label>
+                                <select id="medicamento" class="form-select">
+                                    <option value="">Busque o remédio acima</option>
+                                </select>
+                            </div>
+                            <button id="alternar-novo" type="button" class="btn btn-link p-0 mb-3">Não achei o remédio: cadastrar um novo</button>
+                        </div>
+
+                        <div id="bloco-novo" class="border rounded-3 p-3 mb-3" hidden>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Novo remédio</strong>
+                                <button id="voltar-busca" type="button" class="btn btn-link p-0">Voltar para a busca</button>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="novo-nome" class="form-label fw-semibold">Nome</label>
+                                    <input id="novo-nome" type="text" class="form-control" maxlength="100" placeholder="Losartana potássica">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="novo-apresentacao" class="form-label fw-semibold">Apresentação</label>
+                                    <input id="novo-apresentacao" type="text" class="form-control" maxlength="100" placeholder="50 mg, 30 comprimidos">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="novo-principio" class="form-label fw-semibold">Princípio ativo <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                    <input id="novo-principio" type="text" class="form-control" maxlength="100">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="novo-tipo" class="form-label fw-semibold">Tipo</label>
+                                    <select id="novo-tipo" class="form-select">
+                                        <option value="">Não informar</option>
+                                        <option value="referencia">Referência</option>
+                                        <option value="generico">Genérico</option>
+                                        <option value="similar">Similar</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <div class="form-check mb-2">
+                                        <input id="novo-receita" class="form-check-input" type="checkbox">
+                                        <label for="novo-receita" class="form-check-label">Exige receita</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6 col-md-3">
+                                <label for="lote" class="form-label fw-semibold">Lote</label>
+                                <input id="lote" type="text" class="form-control" maxlength="40" required>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="validade" class="form-label fw-semibold">Validade</label>
+                                <input id="validade" type="date" class="form-control" required>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="quantidade" class="form-label fw-semibold">Quantidade</label>
+                                <input id="quantidade" type="number" class="form-control" min="0" max="1000000" step="1" inputmode="numeric" required>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="preco-venda" class="form-label fw-semibold">Preço de venda (R$)</label>
+                                <input id="preco-venda" type="text" class="form-control" inputmode="decimal" placeholder="12,50" required>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="preco-custo" class="form-label fw-semibold">Preço de custo (R$) <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                <input id="preco-custo" type="text" class="form-control" inputmode="decimal" placeholder="8,00">
+                            </div>
+                            <div class="col-sm-6 col-md-5">
+                                <label for="fornecedor" class="form-label fw-semibold">Fornecedor <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                <input id="fornecedor" type="text" class="form-control" maxlength="100">
+                            </div>
+                            <div class="col-sm-6 col-md-4">
+                                <label for="estoque-minimo" class="form-label fw-semibold">Estoque mínimo <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                <input id="estoque-minimo" type="number" class="form-control" min="0" max="100000" step="1" inputmode="numeric">
+                                <div class="form-text">Avisa aqui no painel quando faltar.</div>
+                            </div>
+                        </div>
+                        <div>
+                            <button id="botao-salvar-lote" type="submit" class="btn btn-primary btn-lg">Salvar lote</button>
+                        </div>
+                    </form>
+
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h2 class="h4 fw-bold mb-0">Estoque desta farmácia</h2>
+                        <input id="filtro-estoque" type="search" class="form-control" style="max-width: 260px;" placeholder="Filtrar por nome" aria-label="Filtrar remédios por nome">
                     </div>
-                    <div class="col-sm-6">
-                        <label for="disponivel" class="form-label fw-semibold">Tem em estoque?</label>
-                        <select id="disponivel" class="form-select">
-                            <option value="sim">Sim</option>
-                            <option value="nao">Não</option>
-                        </select>
-                    </div>
-                </div>
-                <button id="botao-salvar" type="submit" class="btn btn-primary btn-lg">Salvar</button>
-            </form>
-            <h2 class="h4 fw-bold">Remédios desta farmácia</h2>
-            <p id="vazio-painel" class="text-body-secondary" hidden>Nenhum remédio cadastrado ainda.</p>
-            <ul id="lista-painel" class="list-group"></ul>
+                    <p id="vazio-estoque" class="text-body-secondary" hidden>Nenhum remédio cadastrado ainda.</p>
+                    <div id="lista-estoque"></div>
+                </section>
+
+                <!-- ===== SERVIÇOS GRATUITOS ===== -->
+                <section class="tab-pane fade" id="aba-servicos" role="tabpanel" aria-labelledby="guia-servicos">
+                    <form id="form-servico" class="card card-body border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <h2 class="h5 fw-bold">Adicionar ou alterar um serviço gratuito</h2>
+                        <div id="editando-servico" class="alert alert-secondary d-flex flex-wrap justify-content-between align-items-center gap-2 py-2" hidden>
+                            <span id="texto-editando-servico"></span>
+                            <button id="cancelar-servico" type="button" class="btn btn-sm btn-outline-secondary rounded-pill">Cancelar</button>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="servico" class="form-label fw-semibold">Serviço</label>
+                                <select id="servico" class="form-select"></select>
+                            </div>
+                            <div class="col-md-6" id="bloco-nome-proprio" hidden>
+                                <label for="nome-proprio" class="form-label fw-semibold">Nome do serviço</label>
+                                <input id="nome-proprio" type="text" class="form-control" minlength="3" maxlength="80" placeholder="Ex.: Teste de gravidez rápido">
+                            </div>
+                            <div class="col-12">
+                                <label for="dias-horarios" class="form-label fw-semibold">Dias e horários <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                <input id="dias-horarios" type="text" class="form-control" maxlength="200" placeholder="Seg a Sex, das 8h às 17h">
+                            </div>
+                            <div class="col-12">
+                                <label for="observacao" class="form-label fw-semibold">Observação <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                <input id="observacao" type="text" class="form-control" maxlength="300" placeholder="Ex.: não precisa de jejum">
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check">
+                                    <input id="exige-agendamento" class="form-check-input" type="checkbox">
+                                    <label for="exige-agendamento" class="form-check-label">Precisa agendar</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check">
+                                    <input id="servico-ativo" class="form-check-input" type="checkbox" checked>
+                                    <label for="servico-ativo" class="form-check-label">Disponível agora (aparece para o público)</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <button id="botao-salvar-servico" type="submit" class="btn btn-primary btn-lg">Salvar serviço</button>
+                        </div>
+                    </form>
+
+                    <h2 class="h4 fw-bold">Serviços desta farmácia</h2>
+                    <p id="vazio-servicos" class="text-body-secondary" hidden>Nenhum serviço cadastrado ainda.</p>
+                    <ul id="lista-servicos" class="list-group"></ul>
+                </section>
+            </div>
         </div>
     </main>
 
@@ -126,127 +266,7 @@
     <script>
         new Tema(document.getElementById("botao-tema"), [...document.querySelectorAll("[data-tema]")]);
         Sessao.iniciar();
-        // Remédios desta farmácia: textContent em tudo; o id da farmácia vem do servidor, nunca daqui
-        let idSelecionado = null;
-        function mostrarAviso(texto) {
-            const aviso = document.getElementById("aviso");
-            aviso.textContent = texto;
-            aviso.hidden = false;
-        }
-        function formatarPreco(valor) {
-            return valor === null ? "sem preço" : Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-        }
-        function editar(remedio) {
-            const select = document.getElementById("medicamento");
-            select.replaceChildren(new Option(remedio.nome, String(remedio.id)));
-            select.value = String(remedio.id);
-            document.getElementById("preco").value = remedio.preco === null ? "" : String(remedio.preco).replace(".", ",");
-            document.getElementById("disponivel").value = remedio.disponivel ? "sim" : "nao";
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        }
-        function criarLinha(remedio) {
-            const li = document.createElement("li");
-            li.className = "list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2";
-            const texto = document.createElement("div");
-            const nome = document.createElement("span");
-            nome.className = "d-block fw-bold";
-            nome.textContent = remedio.nome;
-            const detalhe = document.createElement("small");
-            detalhe.className = "d-block text-body-secondary";
-            const partes = [formatarPreco(remedio.preco), remedio.disponivel ? "em estoque" : "sem estoque"];
-            if (remedio.atualizadoEm) {
-                partes.push(`atualizado em ${new Date(remedio.atualizadoEm).toLocaleDateString("pt-BR")}`);
-            }
-            if (remedio.informadoPelaFarmacia) {
-                partes.push("informado pela farmácia");
-            }
-            detalhe.textContent = partes.join(" · ");
-            texto.append(nome, detalhe);
-            const acoes = document.createElement("div");
-            acoes.className = "d-flex flex-wrap gap-2";
-            const editarBotao = document.createElement("button");
-            editarBotao.type = "button";
-            editarBotao.className = "btn btn-sm btn-outline-primary rounded-pill";
-            editarBotao.textContent = "Alterar";
-            editarBotao.addEventListener("click", () => editar(remedio));
-            const remover = document.createElement("button");
-            remover.type = "button";
-            remover.className = "btn btn-sm btn-outline-danger rounded-pill";
-            remover.textContent = "Remover";
-            remover.addEventListener("click", () => salvar({ acao: "remover", medicamento: String(remedio.id) }));
-            acoes.append(editarBotao, remover);
-            li.append(texto, acoes);
-            return li;
-        }
-        async function carregarPainel() {
-            const resposta = await fetch("/api/painel");
-            if (resposta.status === 401) {
-                document.getElementById("sem-entrar").hidden = false;
-                return;
-            }
-            if (resposta.status === 403) {
-                document.getElementById("sem-acesso").hidden = false;
-                return;
-            }
-            if (!resposta.ok) {
-                mostrarAviso("Não consegui carregar o painel. Recarregue a página.");
-                return;
-            }
-            const dados = await resposta.json();
-            document.getElementById("nome-farmacia").textContent = dados.farmacia.nome;
-            document.getElementById("aviso-posicao").hidden = dados.farmacia.temPosicao;
-            const lista = document.getElementById("lista-painel");
-            lista.replaceChildren(...dados.remedios.map(criarLinha));
-            document.getElementById("vazio-painel").hidden = dados.remedios.length > 0;
-            document.getElementById("conteudo").hidden = false;
-        }
-        // Envia uma ação do painel e recarrega a lista. O servidor usa a farmácia da conta, não a que vier do formulário.
-        async function salvar(campos) {
-            document.getElementById("aviso").hidden = true;
-            const resposta = await fetch("/api/painel", { method: "POST", body: new URLSearchParams(campos) });
-            const dados = await resposta.json().catch(() => ({}));
-            if (!resposta.ok) {
-                mostrarAviso(dados.erro || "Não consegui salvar agora. Tente de novo.");
-                return false;
-            }
-            await carregarPainel();
-            return true;
-        }
-        document.getElementById("botao-buscar").addEventListener("click", async () => {
-            const texto = document.getElementById("busca-remedio").value.trim();
-            if (texto.length < 3) {
-                mostrarAviso("Digite pelo menos 3 letras do remédio.");
-                return;
-            }
-            const resposta = await fetch(`/api/medicamentos?nome=${encodeURIComponent(texto)}`);
-            const remedios = await resposta.json();
-            const select = document.getElementById("medicamento");
-            select.replaceChildren(...remedios.map((r) => new Option(r.nome, String(r.id))));
-            if (remedios.length === 0) {
-                select.replaceChildren(new Option("Nenhum remédio com esse nome", ""));
-            }
-        });
-        document.getElementById("form-remedio").addEventListener("submit", async (evento) => {
-            evento.preventDefault();
-            const form = evento.target;
-            if (!form.checkValidity() || !document.getElementById("medicamento").value) {
-                form.classList.add("was-validated");
-                mostrarAviso("Escolha o remédio e digite o preço.");
-                return;
-            }
-            const ok = await salvar({
-                acao: "salvar",
-                medicamento: document.getElementById("medicamento").value,
-                preco: document.getElementById("preco").value,
-                disponivel: document.getElementById("disponivel").value,
-            });
-            if (ok) {
-                form.reset();
-                form.classList.remove("was-validated");
-                document.getElementById("medicamento").replaceChildren(new Option("Busque o remédio acima", ""));
-            }
-        });
-        carregarPainel();
     </script>
+    <script src="js/painel-farmacia.js?v=20261028"></script>
 </body>
 </html>

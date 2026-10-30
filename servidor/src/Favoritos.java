@@ -40,7 +40,7 @@ class Favoritos {
         Map<String, Object> dados = new LinkedHashMap<>();
         dados.put("farmacias", consultar(
                 "SELECT f.id, f.nome, f.endereco FROM favorito_farmacia x JOIN farmacia f ON f.id = x.farmacia_id "
-                + "WHERE x.conta_id = ? ORDER BY f.nome", sessao.contaId()));
+                + "WHERE x.conta_id = ? AND f.situacao = 'aprovada' ORDER BY f.nome", sessao.contaId()));
         dados.put("medicamentos", consultar(
                 "SELECT m.id, m.nome FROM favorito_medicamento x JOIN medicamento m ON m.id = x.medicamento_id "
                 + "WHERE x.conta_id = ? ORDER BY m.nome", sessao.contaId()));
@@ -116,7 +116,8 @@ class Favoritos {
     }
 
     private static boolean existe(Connection conexao, String tabela, long id) throws SQLException {
-        try (PreparedStatement comando = conexao.prepareStatement("SELECT 1 FROM " + tabela + " WHERE id = ?")) {
+        try (PreparedStatement comando = conexao.prepareStatement("SELECT 1 FROM " + tabela + " WHERE id = ?"
+                + (tabela.equals("farmacia") ? " AND situacao = 'aprovada'" : ""))) {
             comando.setLong(1, id);
             try (ResultSet linha = comando.executeQuery()) {
                 return linha.next();

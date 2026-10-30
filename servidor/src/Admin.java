@@ -78,7 +78,12 @@ class Admin {
         }
         String sql = "SELECT a.id, c.nome, c.email, a.cnpj_informado, a.telefone_informado, a.nome_informado, "
                 + "a.endereco_informado, a.cidade_informada, a.status, a.criado_em, a.decidido_em, d.nome AS decidido_por_nome, "
-                + "f.id AS farmacia_id, f.nome AS farmacia_nome, f.endereco AS farmacia_endereco, f.telefone AS farmacia_telefone "
+                + "f.id AS farmacia_id, f.nome AS farmacia_nome, f.endereco AS farmacia_endereco, f.telefone AS farmacia_telefone, "
+                + "f.cidade AS farmacia_cidade, f.bairro AS farmacia_bairro, f.cep AS farmacia_cep, "
+                + "CAST(f.latitude AS DOUBLE PRECISION) AS farmacia_latitude, CAST(f.longitude AS DOUBLE PRECISION) AS farmacia_longitude, "
+                + "f.situacao AS farmacia_situacao, f.cadastro_proprio AS farmacia_proprio, "
+                + "(SELECT count(*) FROM estoque_lote l WHERE l.farmacia_id = f.id) AS qtd_lotes, "
+                + "(SELECT count(*) FROM farmacia_servico s WHERE s.farmacia_id = f.id) AS qtd_servicos "
                 + "FROM acesso_farmacia a JOIN conta c ON c.id = a.conta_id "
                 + "LEFT JOIN conta d ON d.id = a.decidido_por "
                 + "LEFT JOIN farmacia f ON f.id = a.farmacia_id "
@@ -107,6 +112,15 @@ class Admin {
                         farmacia.put("nome", linhas.getString("farmacia_nome"));
                         farmacia.put("endereco", linhas.getString("farmacia_endereco"));
                         farmacia.put("telefone", linhas.getString("farmacia_telefone"));
+                        farmacia.put("cidade", linhas.getString("farmacia_cidade"));
+                        farmacia.put("bairro", linhas.getString("farmacia_bairro"));
+                        farmacia.put("cep", linhas.getString("farmacia_cep"));
+                        farmacia.put("latitude", linhas.getObject("farmacia_latitude"));
+                        farmacia.put("longitude", linhas.getObject("farmacia_longitude"));
+                        farmacia.put("situacao", linhas.getString("farmacia_situacao"));
+                        farmacia.put("cadastroProprio", linhas.getBoolean("farmacia_proprio"));
+                        farmacia.put("lotes", linhas.getLong("qtd_lotes"));
+                        farmacia.put("servicos", linhas.getLong("qtd_servicos"));
                     }
                     pedido.put("farmacia", farmacia);
                     pedido.put("nomeInformado", linhas.getString("nome_informado"));
@@ -145,6 +159,7 @@ class Admin {
                     aprovar(conexao, pedido, admin.contaId());
                 } else {
                     gravarDecisao(conexao, pedido.id(), novoStatus, admin.contaId());
+                    esconderFarmacia(conexao, pedido);
                 }
                 conexao.commit();
                 Login.json(troca, 200, "{\"ok\":true,\"status\":" + Json.de(novoStatus) + "}");
@@ -195,6 +210,28 @@ class Admin {
         try (PreparedStatement comando = conexao.prepareStatement(
                 "UPDATE conta SET tipo = 'farmacia' WHERE id = ? AND tipo = 'cidadao'")) {
             comando.setLong(1, pedido.contaId());
+            comando.executeUpdate();
+        }
+        // cadastro novo: só agora a farmácia aparece no mapa, nas buscas, nos favoritos e nos serviços
+        try (PreparedStatement comando = conexao.prepareStatement(
+                "UPDATE farmacia SET situacao = 'aprovada' WHERE id = ? AND cadastro_proprio")) {
+            comando.setLong(1, farmacia);
+            comando.executeUpdate();
+        }
+    }
+
+    // Recusar ou revogar: a farmácia de cadastro novo volta a ficar oculta (o estoque e os serviços ficam guardados).
+    // Farmácia da base pública continua visível, e não esconde se outra conta ainda tem acesso aprovado a ela.
+    private static void esconderFarmacia(Connection conexao, Pedido pedido) throws SQLException {
+        if (pedido.farmaciaId() == null) {
+            return;
+        }
+        try (PreparedStatement comando = conexao.prepareStatement(
+                "UPDATE farmacia SET situacao = 'recusada' WHERE id = ? AND cadastro_proprio "
+                        + "AND NOT EXISTS (SELECT 1 FROM acesso_farmacia o WHERE o.farmacia_id = farmacia.id "
+                        + "AND o.status = 'aprovado' AND o.id <> ?)")) {
+            comando.setLong(1, pedido.farmaciaId());
+            comando.setLong(2, pedido.id());
             comando.executeUpdate();
         }
     }

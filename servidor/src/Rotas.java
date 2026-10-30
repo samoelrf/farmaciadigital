@@ -27,6 +27,7 @@ public class Rotas {
                        CASE WHEN hora_abertura IS NOT NULL THEN 'Dados fictícios (exemplo)' END) AS fonte_horario
             FROM farmacia
             WHERE latitude IS NOT NULL   -- farmácia aprovada sem posição não aparece no mapa
+              AND situacao = 'aprovada'  -- cadastro novo só aparece depois que o administrador aprova
             """;
 
     private static final String SQL_MEDICAMENTOS = """
@@ -44,7 +45,13 @@ public class Rotas {
             JOIN farmacia f ON f.id = p.farmacia_id
             JOIN estoque e ON e.farmacia_id = p.farmacia_id AND e.medicamento_id = p.medicamento_id
             WHERE p.medicamento_id = ?
+              AND f.situacao = 'aprovada'
               AND e.quantidade > 0
+              AND (NOT EXISTS (SELECT 1 FROM estoque_lote l
+                               WHERE l.farmacia_id = p.farmacia_id AND l.medicamento_id = p.medicamento_id)
+                   OR EXISTS (SELECT 1 FROM estoque_lote l
+                              WHERE l.farmacia_id = p.farmacia_id AND l.medicamento_id = p.medicamento_id
+                                AND l.quantidade > 0 AND l.validade >= current_date))
             ORDER BY p.preco, f.nome
             """;
 

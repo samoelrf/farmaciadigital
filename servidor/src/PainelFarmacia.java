@@ -17,12 +17,19 @@ class PainelFarmacia {
     private static final DateTimeFormatter DATA = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     static boolean trata(HttpExchange troca, String caminho) throws IOException {
-        if (!caminho.equals("/api/acesso-farmacia") && !caminho.equals("/api/painel")) {
+        boolean verificar = caminho.equals("/api/acesso-farmacia/verificar");
+        if (!verificar && !caminho.equals("/api/acesso-farmacia") && !caminho.equals("/api/painel")) {
             return false;
         }
         try {
             boolean leitura = "GET".equals(troca.getRequestMethod());
-            if (caminho.equals("/api/acesso-farmacia")) {
+            if (verificar) {
+                if (leitura) {
+                    verificarCnpj(troca);
+                } else {
+                    Servidor.enviarTexto(troca, 405, "Método não permitido");
+                }
+            } else if (caminho.equals("/api/acesso-farmacia")) {
                 if (leitura) {
                     estadoDoPedido(troca);
                 } else if (Login.pedidoPost(troca)) {
@@ -62,12 +69,49 @@ class PainelFarmacia {
                     status = linha.getString("status");
                     farmacia = linha.getString("farmacia");
                 }
+                // painel: a pessoa já pode abrir o painel (aprovada, ou cadastro novo ainda em análise)
+                Acesso acesso = acessoDoPainel(sessao.contaId());
+                boolean painel = acesso != null && (acesso.pendente() || "farmacia".equals(sessao.tipo()));
                 // Json.texto não aceita null, por isso Json.de
-                Login.json(troca, 200, "{\"status\":" + Json.de(status) + ",\"farmacia\":" + Json.de(farmacia) + "}");
+                Login.json(troca, 200, "{\"status\":" + Json.de(status) + ",\"farmacia\":" + Json.de(farmacia)
+                        + ",\"painel\":" + painel + "}");
             }
         }
     }
 
+    // Diz se o CNPJ já está na base, para a tela decidir se pede o endereço.
+    private static void verificarCnpj(HttpExchange troca) throws IOException, SQLException {
+        Login.Sessao sessao = quemPode(troca);
+        if (sessao == null) {
+            return;
+        }
+        String consulta = troca.getRequestURI().getRawQuery() == null ? "" : troca.getRequestURI().getRawQuery();
+        String cnpj = Login.campo(consulta, "cnpj").replaceAll("\\D", "");
+        if (!cnpjValido(cnpj)) {
+            throw new IllegalArgumentException("CNPJ inválido. Confira os 14 números.");
+        }
+        Existente existente = farmaciaPeloCnpj(cnpj);
+        String estado;
+        String nome = null;
+        if (existente == null || reaproveitavel(existente, sessao.contaId())) {
+            estado = "nova";
+        } else if ("aprovada".equals(existente.situacao())) {
+            estado = "base";
+            nome = dadosDaFarmacia(existente.id()).get("nome").toString();
+        } else {
+            estado = "pendente".equals(existente.situacao()) ? "em_analise" : "indisponivel";
+        }
+        Login.json(troca, 200, "{\"estado\":" + Json.de(estado) + ",\"nome\":" + Json.de(nome) + "}");
+    }
+
+    private static final double[] CAIXA_CIDADES = {-47.62, -23.70, -47.25, -23.30}; // oeste, sul, leste, norte
+
+    private record Dados(String nome, String endereco, String bairro, String cidade, String cep,
+                         BigDecimal latitude, BigDecimal longitude, String precisao) {}
+
+    // Cadastro da farmácia. CNPJ novo: cria a farmácia já com endereço e posição, mas "pendente" (fica fora do
+    // mapa e das buscas até o administrador aprovar) e a conta já pode usar o painel. CNPJ que já está na base
+    // pública: vira um pedido de acesso, e o painel só abre depois da aprovação.
     private static void pedirAcesso(HttpExchange troca) throws IOException, SQLException {
         Login.Sessao sessao = quemPode(troca);
         if (sessao == null) {
@@ -80,9 +124,6 @@ class PainelFarmacia {
         }
         String cnpj = Login.campo(formulario, "cnpj").replaceAll("\\D", "");
         String telefone = Login.campo(formulario, "telefone").replaceAll("\\D", "");
-        String nome = Login.campo(formulario, "nome").trim();
-        String endereco = Login.campo(formulario, "endereco").trim();
-        String cidade = Login.campo(formulario, "cidade").trim();
 
         if (!cnpjValido(cnpj)) {
             throw new IllegalArgumentException("CNPJ inválido. Confira os 14 números.");
@@ -90,59 +131,162 @@ class PainelFarmacia {
         if (telefone.length() < 10 || telefone.length() > 11) {
             throw new IllegalArgumentException("Telefone inválido. Digite com DDD (10 ou 11 números).");
         }
-        if (nome.length() > 100 || endereco.length() > 200) {
-            throw new IllegalArgumentException("Nome (até 100 caracteres) ou endereço (até 200 caracteres) grande demais.");
-        }
-
-        Long farmaciaId = farmaciaPeloCnpj(cnpj);
-        if (farmaciaId == null && (nome.length() < 2 || endereco.length() < 5)) {
-            throw new IllegalArgumentException("Não achamos este CNPJ na nossa base. Informe o nome e o endereço da farmácia.");
-        }
-        if (farmaciaId == null && !cidade.equals("Sorocaba") && !cidade.equals("Votorantim")) {
-            throw new IllegalArgumentException("Escolha a cidade da farmácia: Sorocaba ou Votorantim.");
-        }
         if (acessoAprovado(sessao.contaId()) != null) {
             Login.responderErro(troca, 409, "Você já tem acesso aprovado a uma farmácia.");
             return;
         }
-
-        String sql = "INSERT INTO acesso_farmacia (conta_id, farmacia_id, cnpj_informado, telefone_informado, "
-                + "nome_informado, endereco_informado, status, cidade_informada) VALUES (?, ?, ?, ?, ?, ?, 'pendente', ?)";
-        try (Connection conexao = Banco.conectar();
-             PreparedStatement comando = conexao.prepareStatement(sql)) {
-            comando.setLong(1, sessao.contaId());
-            if (farmaciaId == null) comando.setNull(2, java.sql.Types.INTEGER); else comando.setLong(2, farmaciaId);
-            comando.setString(3, cnpj);
-            comando.setString(4, telefone);
-            comando.setString(5, farmaciaId == null ? nome : null);
-            comando.setString(6, farmaciaId == null ? endereco : null);
-            comando.setString(7, farmaciaId == null ? cidade : null);
-            comando.executeUpdate();
-        } catch (SQLException erro) {
-            if ("23505".equals(erro.getSQLState())) {
-                Login.responderErro(troca, 409, "Você já tem um pedido pendente.");
-                return;
-            }
-            throw erro;
+        if (temPedidoPendente(sessao.contaId())) {
+            Login.responderErro(troca, 409, "Você já tem um pedido pendente.");
+            return;
         }
-        Login.json(troca, 201, "{\"status\":\"pendente\"}");
+
+        Existente existente = farmaciaPeloCnpj(cnpj);
+        boolean nova = existente == null || reaproveitavel(existente, sessao.contaId());
+        if (!nova && !"aprovada".equals(existente.situacao())) {
+            throw new IllegalArgumentException("pendente".equals(existente.situacao())
+                    ? "Este CNPJ já tem um cadastro aguardando aprovação."
+                    : "Este CNPJ já foi usado em outro cadastro. Fale com a nossa equipe.");
+        }
+        Dados dados = nova ? lerDadosDaFarmacia(formulario) : null;
+
+        try (Connection conexao = Banco.conectar()) {
+            conexao.setAutoCommit(false);
+            try {
+                Long farmaciaId = nova ? null : existente.id();
+                if (existente == null) {
+                    farmaciaId = inserirFarmacia(conexao, dados, cnpj, telefone, sessao.contaId());
+                } else if (nova) {
+                    farmaciaId = existente.id();
+                    reenviarFarmacia(conexao, farmaciaId, dados, telefone);
+                }
+                try (PreparedStatement comando = conexao.prepareStatement(
+                        "INSERT INTO acesso_farmacia (conta_id, farmacia_id, cnpj_informado, telefone_informado, status) "
+                                + "VALUES (?, ?, ?, ?, 'pendente')")) {
+                    comando.setLong(1, sessao.contaId());
+                    comando.setLong(2, farmaciaId);
+                    comando.setString(3, cnpj);
+                    comando.setString(4, telefone);
+                    comando.executeUpdate();
+                }
+                conexao.commit();
+            } catch (SQLException erro) {
+                conexao.rollback();
+                if ("23505".equals(erro.getSQLState())) {
+                    Login.responderErro(troca, 409, "Este CNPJ ou esta conta já tem um cadastro em andamento.");
+                    return;
+                }
+                throw erro;
+            }
+        }
+        Login.json(troca, 201, "{\"status\":\"pendente\",\"painel\":" + nova + "}");
+    }
+
+    private static Dados lerDadosDaFarmacia(String formulario) {
+        String nome = Login.campo(formulario, "nome").trim();
+        String logradouro = Login.campo(formulario, "endereco").trim();
+        String bairro = Login.campo(formulario, "bairro").trim();
+        String cidade = Login.campo(formulario, "cidade").trim();
+        String cep = Login.campo(formulario, "cep").replaceAll("\\D", "");
+
+        if (nome.length() < 2 || nome.length() > 100) {
+            throw new IllegalArgumentException("Informe o nome da farmácia (até 100 caracteres).");
+        }
+        if (logradouro.length() < 5 || logradouro.length() > 140) {
+            throw new IllegalArgumentException("Informe o endereço com rua e número (de 5 a 140 caracteres).");
+        }
+        if (bairro.length() < 2 || bairro.length() > 60) {
+            throw new IllegalArgumentException("Informe o bairro (até 60 caracteres).");
+        }
+        if (!cidade.equals("Sorocaba") && !cidade.equals("Votorantim")) {
+            throw new IllegalArgumentException("Escolha a cidade da farmácia: Sorocaba ou Votorantim.");
+        }
+        if (!cep.isEmpty() && cep.length() != 8) {
+            throw new IllegalArgumentException("CEP inválido. Digite os 8 números.");
+        }
+        BigDecimal latitude = coordenada(Login.campo(formulario, "latitude"), CAIXA_CIDADES[1], CAIXA_CIDADES[3]);
+        BigDecimal longitude = coordenada(Login.campo(formulario, "longitude"), CAIXA_CIDADES[0], CAIXA_CIDADES[2]);
+        if (latitude == null || longitude == null) {
+            throw new IllegalArgumentException("Localize a farmácia no mapa antes de enviar: use o botão \"Localizar no mapa\" e escolha o endereço.");
+        }
+        String precisao = Login.campo(formulario, "precisao").equals("exata") ? "ponto do endereço" : "aproximada (rua)";
+        return new Dados(nome, logradouro + " - " + bairro, bairro, cidade, cep.isEmpty() ? null : cep, latitude, longitude, precisao);
+    }
+
+    // vazio devolve null; fora da caixa de Sorocaba e Votorantim (ou não numérico) é erro
+    private static BigDecimal coordenada(String texto, double minimo, double maximo) {
+        if (texto.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            BigDecimal valor = new BigDecimal(texto.trim());
+            if (valor.doubleValue() < minimo || valor.doubleValue() > maximo) {
+                throw new IllegalArgumentException("A localização escolhida fica fora de Sorocaba e Votorantim.");
+            }
+            return valor.setScale(6, java.math.RoundingMode.HALF_UP);
+        } catch (NumberFormatException erro) {
+            throw new IllegalArgumentException("Localização inválida. Escolha o endereço de novo.");
+        }
+    }
+
+    private static long inserirFarmacia(Connection conexao, Dados dados, String cnpj, String telefone, long contaId) throws SQLException {
+        try (PreparedStatement comando = conexao.prepareStatement(
+                "INSERT INTO farmacia (nome, endereco, cnpj, telefone, cidade, bairro, cep, latitude, longitude, "
+                        + "precisao_posicao, situacao, cadastro_proprio, cadastrado_por_conta_id) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', TRUE, ?) RETURNING id")) {
+            comando.setString(1, dados.nome());
+            comando.setString(2, dados.endereco());
+            comando.setString(3, cnpj);
+            comando.setString(4, Admin.formatarTelefone(telefone));
+            comando.setString(5, dados.cidade());
+            comando.setString(6, dados.bairro());
+            comando.setString(7, dados.cep());
+            comando.setBigDecimal(8, dados.latitude());
+            comando.setBigDecimal(9, dados.longitude());
+            comando.setString(10, dados.precisao());
+            comando.setLong(11, contaId);
+            try (ResultSet linha = comando.executeQuery()) {
+                linha.next();
+                return linha.getLong(1);
+            }
+        }
+    }
+
+    // cadastro recusado que a mesma conta corrigiu e mandou de novo: o estoque e os serviços já lançados ficam
+    private static void reenviarFarmacia(Connection conexao, long farmaciaId, Dados dados, String telefone) throws SQLException {
+        try (PreparedStatement comando = conexao.prepareStatement(
+                "UPDATE farmacia SET nome = ?, endereco = ?, telefone = ?, cidade = ?, bairro = ?, cep = ?, latitude = ?, "
+                        + "longitude = ?, precisao_posicao = ?, situacao = 'pendente' WHERE id = ?")) {
+            comando.setString(1, dados.nome());
+            comando.setString(2, dados.endereco());
+            comando.setString(3, Admin.formatarTelefone(telefone));
+            comando.setString(4, dados.cidade());
+            comando.setString(5, dados.bairro());
+            comando.setString(6, dados.cep());
+            comando.setBigDecimal(7, dados.latitude());
+            comando.setBigDecimal(8, dados.longitude());
+            comando.setString(9, dados.precisao());
+            comando.setLong(10, farmaciaId);
+            comando.executeUpdate();
+        }
+    }
+
+    private static boolean temPedidoPendente(long contaId) throws SQLException {
+        try (Connection conexao = Banco.conectar();
+             PreparedStatement comando = conexao.prepareStatement(
+                     "SELECT 1 FROM acesso_farmacia WHERE conta_id = ? AND status = 'pendente'")) {
+            comando.setLong(1, contaId);
+            try (ResultSet linha = comando.executeQuery()) {
+                return linha.next();
+            }
+        }
     }
 
     private static void painel(HttpExchange troca) throws IOException, SQLException {
-        Login.Sessao sessao = quemPode(troca);
-        if (sessao == null) {
+        Contexto contexto = exigirFarmacia(troca);
+        if (contexto == null) {
             return;
         }
-        // só conta de farmácia: acesso aprovado sozinho não basta
-        if (!"farmacia".equals(sessao.tipo())) {
-            Login.responderErro(troca, 403, "Só contas de farmácia têm o painel.");
-            return;
-        }
-        Long farmaciaId = acessoAprovado(sessao.contaId());
-        if (farmaciaId == null) {
-            Login.responderErro(troca, 403, "Você ainda não tem acesso aprovado a uma farmácia.");
-            return;
-        }
+        long farmaciaId = contexto.farmaciaId();
         // o id da farmácia vem do banco, nunca do pedido
         String sql = "SELECT m.id AS medicamento_id, m.nome, e.quantidade, p.preco, "
                 + "GREATEST(e.atualizado_em, p.atualizado_em) AS atualizado_em, p.informado_por_conta_id "
@@ -180,19 +324,11 @@ class PainelFarmacia {
     }
 
     private static void alterarPainel(HttpExchange troca) throws IOException, SQLException {
-        Login.Sessao sessao = quemPode(troca);
-        if (sessao == null) {
+        Contexto contexto = exigirFarmacia(troca);
+        if (contexto == null) {
             return;
         }
-        if (!"farmacia".equals(sessao.tipo())) {
-            Login.responderErro(troca, 403, "Só contas de farmácia têm o painel.");
-            return;
-        }
-        Long farmaciaId = acessoAprovado(sessao.contaId());
-        if (farmaciaId == null) {
-            Login.responderErro(troca, 403, "Você ainda não tem acesso aprovado a uma farmácia.");
-            return;
-        }
+        long farmaciaId = contexto.farmaciaId();
         String formulario = Login.lerFormulario(troca);
         if (formulario == null) {
             Login.responderErro(troca, 413, "Pedido grande demais.");
@@ -217,7 +353,7 @@ class PainelFarmacia {
                         throw new IllegalArgumentException("Informe se o remédio está disponível (sim ou não).");
                     }
                     gravarEstoque(conexao, farmaciaId, medicamento, disponivel.equals("sim") ? 1 : 0);
-                    gravarPreco(conexao, farmaciaId, medicamento, preco, sessao.contaId());
+                    gravarPreco(conexao, farmaciaId, medicamento, preco, contexto.contaId());
                 } else {
                     throw new IllegalArgumentException("Ação inválida.");
                 }
@@ -228,6 +364,48 @@ class PainelFarmacia {
             }
         }
         Login.json(troca, 200, "{\"ok\":true}");
+    }
+
+    record Contexto(long farmaciaId, long contaId, boolean pendente) {
+    }
+
+    // farmacia_id que a conta pode operar no painel. "pendente" = cadastro novo da própria conta, ainda em
+    // análise: já pode lançar estoque e serviços, mas a farmácia fica oculta ao público até a aprovação.
+    record Acesso(long farmaciaId, boolean pendente) {
+    }
+
+    static Acesso acessoDoPainel(long contaId) throws SQLException {
+        String sql = "SELECT a.farmacia_id, a.status FROM acesso_farmacia a JOIN farmacia f ON f.id = a.farmacia_id "
+                + "WHERE a.conta_id = ? AND a.farmacia_id IS NOT NULL "
+                + "AND (a.status = 'aprovado' OR (a.status = 'pendente' AND f.cadastro_proprio AND f.situacao = 'pendente')) "
+                + "ORDER BY (a.status = 'aprovado') DESC, COALESCE(a.decidido_em, a.criado_em) DESC LIMIT 1";
+        try (Connection conexao = Banco.conectar();
+             PreparedStatement comando = conexao.prepareStatement(sql)) {
+            comando.setLong(1, contaId);
+            try (ResultSet linha = comando.executeQuery()) {
+                return linha.next() ? new Acesso(linha.getLong("farmacia_id"), !"aprovado".equals(linha.getString("status"))) : null;
+            }
+        }
+    }
+
+    // Para as telas do painel (estoque, serviços): responde o erro e devolve null quando a conta não pode.
+    // O id da farmácia vem do banco, nunca do pedido.
+    static Contexto exigirFarmacia(HttpExchange troca) throws IOException, SQLException {
+        Login.Sessao sessao = quemPode(troca);
+        if (sessao == null) {
+            return null;
+        }
+        Acesso acesso = acessoDoPainel(sessao.contaId());
+        if (acesso == null) {
+            Login.responderErro(troca, 403, "Você ainda não tem acesso a uma farmácia.");
+            return null;
+        }
+        // acesso aprovado só vale para conta de farmácia; cadastro novo em análise vale já
+        if (!acesso.pendente() && !"farmacia".equals(sessao.tipo())) {
+            Login.responderErro(troca, 403, "Só contas de farmácia têm o painel.");
+            return null;
+        }
+        return new Contexto(acesso.farmaciaId(), sessao.contaId(), acesso.pendente());
     }
 
     private static Login.Sessao quemPode(HttpExchange troca) throws IOException {
@@ -255,19 +433,32 @@ class PainelFarmacia {
         }
     }
 
-    private static Long farmaciaPeloCnpj(String cnpj) throws SQLException {
+    private record Existente(long id, String situacao, boolean cadastroProprio, Long donoContaId) {}
+
+    private static Existente farmaciaPeloCnpj(String cnpj) throws SQLException {
         try (Connection conexao = Banco.conectar();
-             PreparedStatement comando = conexao.prepareStatement("SELECT id FROM farmacia WHERE cnpj = ?")) {
+             PreparedStatement comando = conexao.prepareStatement(
+                     "SELECT id, situacao, cadastro_proprio, cadastrado_por_conta_id FROM farmacia WHERE cnpj = ?")) {
             comando.setString(1, cnpj);
             try (ResultSet linha = comando.executeQuery()) {
-                return linha.next() ? linha.getLong("id") : null;
+                if (!linha.next()) {
+                    return null;
+                }
+                Long dono = linha.getObject("cadastrado_por_conta_id") == null ? null : linha.getLong("cadastrado_por_conta_id");
+                return new Existente(linha.getLong("id"), linha.getString("situacao"), linha.getBoolean("cadastro_proprio"), dono);
             }
         }
     }
 
+    // cadastro recusado da própria conta pode ser corrigido e reenviado
+    private static boolean reaproveitavel(Existente existente, long contaId) {
+        return "recusada".equals(existente.situacao()) && existente.cadastroProprio()
+                && existente.donoContaId() != null && existente.donoContaId() == contaId;
+    }
+
     private static Map<String, Object> dadosDaFarmacia(long farmaciaId) throws SQLException {
         try (Connection conexao = Banco.conectar();
-             PreparedStatement comando = conexao.prepareStatement("SELECT id, nome, endereco, latitude IS NOT NULL AS tem_posicao FROM farmacia WHERE id = ?")) {
+             PreparedStatement comando = conexao.prepareStatement("SELECT id, nome, endereco, latitude IS NOT NULL AS tem_posicao, situacao, cadastro_proprio FROM farmacia WHERE id = ?")) {
             comando.setLong(1, farmaciaId);
             try (ResultSet linha = comando.executeQuery()) {
                 linha.next();
@@ -276,6 +467,8 @@ class PainelFarmacia {
                 dados.put("nome", linha.getString("nome"));
                 dados.put("endereco", linha.getString("endereco"));
                 dados.put("temPosicao", linha.getBoolean("tem_posicao"));
+                dados.put("situacao", linha.getString("situacao"));
+                dados.put("cadastroProprio", linha.getBoolean("cadastro_proprio"));
                 return dados;
             }
         }
@@ -325,7 +518,7 @@ class PainelFarmacia {
         }
     }
 
-    private static void gravarPreco(Connection conexao, long farmacia, long medicamento, BigDecimal preco, long contaId) throws SQLException {
+    static void gravarPreco(Connection conexao, long farmacia, long medicamento, BigDecimal preco, long contaId) throws SQLException {
         try (PreparedStatement comando = conexao.prepareStatement(
                 "INSERT INTO preco (farmacia_id, medicamento_id, preco, atualizado_em, informado_por_conta_id) "
                 + "VALUES (?, ?, ?, now(), ?) "

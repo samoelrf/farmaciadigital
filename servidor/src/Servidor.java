@@ -39,7 +39,8 @@ public class Servidor {
             return;
         }
         if (Favoritos.trata(troca, caminho) || PainelFarmacia.trata(troca, caminho) || RedefinirSenha.trata(troca, caminho)
-                || Admin.trata(troca, caminho)) {
+                || Admin.trata(troca, caminho) || ServicosFarmacia.trata(troca, caminho)
+                || EstoqueFarmacia.trata(troca, caminho)) {
             return;
         }
         if (!"GET".equals(troca.getRequestMethod())) {
