@@ -148,7 +148,9 @@ section[id] {
 }
 
 /* o hidden precisa vencer o d-flex do Bootstrap */
-.carregando-mapa[hidden] {
+.carregando-mapa[hidden],
+#editando-lote[hidden],
+#editando-servico[hidden] {
     display: none !important;
 }
 
