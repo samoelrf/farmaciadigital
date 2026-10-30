@@ -69,7 +69,7 @@
 
     <main class="container py-4 py-lg-5" style="max-width: 960px;">
         <h1 class="display-6 fw-bold mb-2">Área do administrador</h1>
-        <p class="lead text-body-secondary mb-4">Pedidos de acesso das farmácias e resumo do sistema. Só a conta de administrador vê esta página.</p>
+        <p class="lead text-body-secondary mb-4">Cadastros de farmácia para aprovar e resumo do sistema. Só a conta de administrador vê esta página.</p>
         <div id="sem-acesso" class="alert alert-warning" role="alert" hidden>
             Área do administrador: entre com uma conta de administrador. <a href="entrar.html" class="alert-link">Entrar</a>
         </div>
@@ -86,7 +86,7 @@
 
             <section class="mb-5" aria-labelledby="pedidos">
                 <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
-                    <h2 id="pedidos" class="h4 fw-bold mb-0">Pedidos de farmácia</h2>
+                    <h2 id="pedidos" class="h4 fw-bold mb-0">Cadastros de farmácia</h2>
                     <div>
                         <label for="filtro-status" class="form-label small fw-semibold mb-1">Mostrar</label>
                         <select id="filtro-status" class="form-select">
@@ -97,7 +97,7 @@
                         </select>
                     </div>
                 </div>
-                <p class="small text-body-secondary">Revogar: a conta continua como farmácia, mas o painel fecha na hora. O tipo da conta não volta a cidadão.</p>
+                <p class="small text-body-secondary">Farmácia nova já usa o painel enquanto espera, mas fica fora do mapa e das buscas até você aprovar. Recusar ou revogar esconde a farmácia de novo (o estoque e os serviços ficam guardados) e fecha o painel. O tipo da conta não volta a cidadão.</p>
                 <div id="aviso-pedidos" class="alert alert-danger" role="alert" hidden></div>
                 <p id="vazio-pedidos" class="text-body-secondary" hidden>Nenhum pedido neste filtro.</p>
                 <ul id="lista-pedidos" class="list-unstyled d-grid gap-3 mb-0"></ul>
@@ -144,9 +144,9 @@
         // Área do administrador. Todo dado do servidor entra com textContent (nunca como HTML).
         const rotulos = { aprovar: "Aprovar", recusar: "Recusar", revogar: "Revogar" };
         const frases = {
-            aprovar: "Aprovar este pedido? A conta vira de farmácia e passa a ter o painel da farmácia.",
-            recusar: "Recusar este pedido? A conta continua como está.",
-            revogar: "Revogar o acesso desta farmácia? O painel fecha na hora.",
+            aprovar: "Aprovar este cadastro? A farmácia passa a aparecer no mapa, nas buscas e nos favoritos, e a conta vira de farmácia.",
+            recusar: "Recusar este cadastro? A farmácia nova continua escondida do público e o painel fecha. A conta pode corrigir os dados e enviar de novo.",
+            revogar: "Revogar a aprovação? O painel fecha na hora e, se a farmácia foi cadastrada aqui, ela some do mapa e das buscas.",
         };
         let decisaoPendente = null;
 
@@ -175,21 +175,54 @@
             const titulo = document.createElement("h3");
             titulo.className = "h5 fw-bold mb-2";
             titulo.textContent = `${p.nomeConta} (${p.emailConta})`;
-            const farmacia = p.farmacia
-                ? `${p.farmacia.nome}, ${p.farmacia.endereco}. Telefone no nosso banco: ${p.farmacia.telefone || "não informado"}`
+            const f = p.farmacia;
+            const nova = Boolean(f && f.cadastroProprio);
+            const farmacia = f
+                ? `${f.nome}, ${f.endereco}${f.cidade ? ` (${f.cidade})` : ""}.${nova ? "" : ` Telefone no nosso banco: ${f.telefone || "não informado"}`}`
                 : `Farmácia nova: ${p.nomeInformado}, ${p.enderecoInformado}, ${p.cidadeInformada || "cidade não informada"}`;
             const situacao = document.createElement("span");
             situacao.className = "badge text-bg-secondary mb-2";
             situacao.textContent = { pendente: "Pendente", aprovado: "Aprovado", recusado: "Recusado" }[p.status];
-            item.append(titulo, situacao,
+            item.append(titulo, situacao);
+            if (nova) {
+                const etiqueta = document.createElement("span");
+                etiqueta.className = "badge text-bg-info mb-2 ms-1";
+                etiqueta.textContent = "Cadastro novo";
+                item.appendChild(etiqueta);
+            }
+            item.append(
                 linha("CNPJ", formatarCnpj(p.cnpj)),
                 linha("Telefone informado", p.telefone || "não informado"),
                 linha("Farmácia", farmacia),
                 linha("Pedido em", formatarData(p.criadoEm)));
-            if (!p.farmacia && p.status === "pendente") {
+            if (nova) {
+                if (f.bairro || f.cep) {
+                    item.appendChild(linha("Bairro e CEP", [f.bairro, f.cep ? `${f.cep.slice(0, 5)}-${f.cep.slice(5)}` : null].filter(Boolean).join(" · ")));
+                }
+                if (f.latitude !== null && f.longitude !== null) {
+                    const mapa = document.createElement("p");
+                    mapa.className = "mb-1";
+                    const forte = document.createElement("strong");
+                    forte.textContent = "Posição: ";
+                    const link = document.createElement("a");
+                    link.href = `https://www.openstreetmap.org/?mlat=${f.latitude}&mlon=${f.longitude}#map=18/${f.latitude}/${f.longitude}`;
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                    link.textContent = "ver no mapa para conferir o endereço";
+                    mapa.append(forte, link);
+                    item.appendChild(mapa);
+                }
+                item.appendChild(linha("Já lançou", `${f.lotes} lote(s) de remédio e ${f.servicos} serviço(s) gratuito(s)`));
+            }
+            if (p.status === "pendente" && nova) {
                 const nota = document.createElement("p");
                 nota.className = "small text-body-secondary mb-2";
-                nota.textContent = "Farmácia nova: ao aprovar, ela entra sem posição no mapa até alguém informar a localização.";
+                nota.textContent = "Ao aprovar, a farmácia passa a aparecer no mapa e nas buscas. Confira o endereço e o ponto no mapa antes.";
+                item.appendChild(nota);
+            } else if (!p.farmacia && p.status === "pendente") {
+                const nota = document.createElement("p");
+                nota.className = "small text-body-secondary mb-2";
+                nota.textContent = "Pedido antigo, sem posição no mapa: ao aprovar, a farmácia entra sem posição até alguém informar a localização.";
                 item.appendChild(nota);
             }
             if (p.decididoEm) {

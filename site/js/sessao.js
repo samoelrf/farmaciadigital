@@ -44,7 +44,8 @@ class Sessao {
         // nome sempre com textContent, nunca HTML
         document.getElementById("nome-usuario").textContent = `Olá, ${Sessao.primeiroNome(usuario.nome)}`;
         document.getElementById("item-admin").hidden = usuario.tipo !== "admin";
-        document.getElementById("item-painel").hidden = !(acesso && acesso.status === "aprovado" && usuario.tipo === "farmacia");
+        // o servidor diz se o painel já está liberado (farmácia aprovada, ou cadastro novo ainda em análise)
+        document.getElementById("item-painel").hidden = !(acesso && acesso.painel === true);
     }
 
     static async iniciar() {

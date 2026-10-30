@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Conta da farmácia · Farmácia Digital</title>
-    <meta name="description" content="Peça acesso para informar os remédios e os preços da sua farmácia.">
+    <title>Cadastrar farmácia · Farmácia Digital</title>
+    <meta name="description" content="Cadastre sua farmácia de Sorocaba ou Votorantim para informar estoque, preços e serviços gratuitos.">
     <script>
         (function () {
             try {
@@ -68,42 +68,83 @@
     </header>
 
     <main class="container py-4 py-lg-5" style="max-width: 800px;">
-        <h1 class="display-6 fw-bold mb-3">Conta da farmácia</h1>
-        <p class="lead text-body-secondary">Se você trabalha numa farmácia, peça acesso informando o CNPJ e o telefone dela. Depois que aprovarmos, você poderá informar os remédios e os preços.</p>
+        <h1 class="display-6 fw-bold mb-3">Cadastrar farmácia</h1>
+        <p class="lead text-body-secondary">Cadastre a sua farmácia de Sorocaba ou Votorantim. Assim que enviar, você já pode lançar o estoque e os serviços gratuitos no painel. A farmácia só aparece no mapa e nas buscas depois que a nossa equipe aprovar.</p>
+
         <div id="sem-entrar" class="alert alert-warning" hidden>
-            Entre na sua conta para pedir acesso. <a href="entrar.html?voltar=%2Ffarmacia-acesso.html" class="alert-link">Entrar</a>
+            Entre na sua conta para cadastrar a farmácia.
+            <a href="entrar.html?voltar=%2Ffarmacia-acesso.html" class="alert-link">Entrar</a> ou
+            <a href="cadastro.html?voltar=%2Ffarmacia-acesso.html" class="alert-link">criar uma conta</a>.
         </div>
         <div id="situacao" class="alert alert-info" hidden></div>
+        <div id="acoes-situacao" class="mb-4" hidden>
+            <a id="link-painel" href="painel-farmacia.html" class="btn btn-primary btn-lg" hidden>Abrir o painel da farmácia</a>
+        </div>
         <div id="aviso" class="alert alert-danger" role="alert" hidden></div>
-        <form id="form-acesso" class="card card-body border-0 shadow-sm rounded-4 p-4" novalidate hidden>
-            <div class="mb-3">
-                <label for="cnpj" class="form-label fw-semibold">CNPJ da farmácia</label>
-                <input id="cnpj" name="cnpj" type="text" class="form-control" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00" required>
-                <div class="invalid-feedback">Digite o CNPJ com 14 números.</div>
+
+        <form id="form-acesso" class="card card-body border-0 shadow-sm rounded-4 p-4" hidden>
+            <h2 class="h5 fw-bold mb-3">Dados da farmácia</h2>
+            <div class="row g-3 mb-2">
+                <div class="col-md-6">
+                    <label for="cnpj" class="form-label fw-semibold">CNPJ</label>
+                    <input id="cnpj" name="cnpj" type="text" class="form-control" inputmode="numeric" maxlength="18" placeholder="00.000.000/0000-00" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="telefone" class="form-label fw-semibold">Telefone (com DDD)</label>
+                    <input id="telefone" name="telefone" type="tel" class="form-control" inputmode="tel" maxlength="20" required>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="telefone" class="form-label fw-semibold">Telefone da farmácia (com DDD)</label>
-                <input id="telefone" name="telefone" type="tel" class="form-control" inputmode="tel" maxlength="20" required>
-                <div class="invalid-feedback">Digite o telefone com DDD.</div>
+            <div id="estado-cnpj" class="alert mt-2 mb-0" role="status" hidden></div>
+
+            <div id="bloco-endereco" hidden>
+                <hr class="my-4">
+                <h2 class="h5 fw-bold mb-1">Endereço</h2>
+                <p class="small text-body-secondary">Atendemos só Sorocaba e Votorantim. É com este endereço que a farmácia aparece no mapa.</p>
+                <div class="row g-3 mb-3">
+                    <div class="col-12">
+                        <label for="nome" class="form-label fw-semibold">Nome da farmácia</label>
+                        <input id="nome" name="nome" type="text" class="form-control" maxlength="100">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cidade" class="form-label fw-semibold">Cidade</label>
+                        <select id="cidade" name="cidade" class="form-select">
+                            <option value="">Escolha</option>
+                            <option value="Sorocaba">Sorocaba</option>
+                            <option value="Votorantim">Votorantim</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label for="endereco" class="form-label fw-semibold">Rua e número</label>
+                        <input id="endereco" name="endereco" type="text" class="form-control" maxlength="140" placeholder="Rua das Flores, 300">
+                    </div>
+                    <div class="col-md-8">
+                        <label for="bairro" class="form-label fw-semibold">Bairro</label>
+                        <input id="bairro" name="bairro" type="text" class="form-control" maxlength="60">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="cep" class="form-label fw-semibold">CEP <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                        <input id="cep" name="cep" type="text" class="form-control" inputmode="numeric" maxlength="9" placeholder="00000-000">
+                    </div>
+                </div>
+
+                <div class="border rounded-3 p-3 mb-3">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button id="botao-localizar" type="button" class="btn btn-outline-primary">Localizar no mapa</button>
+                        <span class="small text-body-secondary">Confira o endereço acima e clique para achar o ponto da farmácia.</span>
+                    </div>
+                    <div id="erro-local" class="text-danger small mt-2" role="alert" hidden></div>
+                    <ul id="opcoes-local" class="list-group mt-3" hidden></ul>
+                    <div id="local-escolhido" class="alert alert-success mt-3 mb-0" role="status" hidden>
+                        <strong>Localização marcada:</strong> <span id="texto-local"></span>
+                        <a id="link-local" href="#" target="_blank" rel="noopener noreferrer" class="alert-link ms-1">Ver no mapa</a>
+                    </div>
+                </div>
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude">
+                <input type="hidden" id="precisao" name="precisao">
             </div>
-            <p class="small text-body-secondary">Se o CNPJ não estiver na nossa base, informe também o nome e o endereço da farmácia.</p>
-            <div class="mb-3">
-                <label for="nome" class="form-label fw-semibold">Nome da farmácia (se o CNPJ não estiver na base)</label>
-                <input id="nome" name="nome" type="text" class="form-control" maxlength="100">
-            </div>
-            <div class="mb-3">
-                <label for="cidade" class="form-label fw-semibold">Cidade da farmácia (se o CNPJ não estiver na base)</label>
-                <select id="cidade" name="cidade" class="form-select">
-                    <option value="">Escolha a cidade</option>
-                    <option value="Sorocaba">Sorocaba</option>
-                    <option value="Votorantim">Votorantim</option>
-                </select>
-            </div>
-            <div class="mb-4">
-                <label for="endereco" class="form-label fw-semibold">Endereço da farmácia (se o CNPJ não estiver na base)</label>
-                <input id="endereco" name="endereco" type="text" class="form-control" maxlength="200">
-            </div>
-            <button type="submit" class="btn btn-primary btn-lg w-100">Pedir acesso</button>
+
+            <button id="botao-enviar" type="submit" class="btn btn-primary btn-lg w-100 mt-3">Enviar cadastro</button>
         </form>
     </main>
 
@@ -121,50 +162,10 @@
     <script>
         new Tema(document.getElementById("botao-tema"), [...document.querySelectorAll("[data-tema]")]);
         Sessao.iniciar();
-        const textos = {
-            nenhum: "Você ainda não pediu acesso.",
-            pendente: "Seu pedido está pendente. Aguarde a análise da nossa equipe.",
-            recusado: "Seu último pedido foi recusado. Você pode enviar outro.",
-        };
-        function mostrarSituacao(acesso) {
-            const situacao = document.getElementById("situacao");
-            const form = document.getElementById("form-acesso");
-            if (acesso.status === "aprovado") {
-                situacao.textContent = `Acesso aprovado à farmácia ${acesso.farmacia}. Abra o painel da farmácia no menu da sua conta.`;
-                form.hidden = true;
-            } else {
-                situacao.textContent = textos[acesso.status];
-                form.hidden = acesso.status === "pendente";
-            }
-            situacao.hidden = false;
-        }
-        fetch("/api/acesso-farmacia").then(async (resposta) => {
-            if (resposta.status === 401) {
-                document.getElementById("sem-entrar").hidden = false;
-                return;
-            }
-            mostrarSituacao(await resposta.json());
-        });
-        document.getElementById("form-acesso").addEventListener("submit", async (evento) => {
-            evento.preventDefault();
-            const form = evento.target;
-            const aviso = document.getElementById("aviso");
-            aviso.hidden = true;
-            if (!form.checkValidity()) {
-                form.classList.add("was-validated");
-                return;
-            }
-            const resposta = await fetch("/api/acesso-farmacia", { method: "POST", body: new URLSearchParams(new FormData(form)) });
-            if (resposta.status === 201) {
-                form.reset();
-                form.classList.remove("was-validated");
-                mostrarSituacao({ status: "pendente" });
-                return;
-            }
-            const dados = await resposta.json().catch(() => ({}));
-            aviso.textContent = dados.erro || "Não consegui enviar o pedido agora. Tente de novo.";
-            aviso.hidden = false;
-        });
     </script>
+    <script src="js/config.js?v=20261029"></script>
+    <script src="js/api.js?v=20261022b3"></script>
+    <script src="js/busca-endereco.js?v=20261022b3"></script>
+    <script src="js/farmacia-acesso.js?v=20261029"></script>
 </body>
 </html>

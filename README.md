@@ -21,7 +21,9 @@ Mapa das farmácias e UBS de Sorocaba e Votorantim, com busca por endereço, hor
    1. `tabela.sql`, `dados.sql`, `precos.sql`, `farmacias_reais.sql`, `ubs.sql`, `horarios.sql` (dados do mapa);
    2. `login.sql` (tabelas do login, favoritos, pedidos de farmácia e recuperação de senha);
    3. `demo.sql` **só para demonstração** (veja abaixo).
-   4. `consultas.sql` é **opcional**: só consultas de leitura de exemplo, para ver os dados do banco. Não altera nada.
+   4. `servicos_estoque.sql` (serviços gratuitos e estoque por lote). Rode **depois** do `demo.sql`, porque ele acerta o contador de ids dos remédios.
+   5. `cadastro_farmacia.sql` (cadastro de farmácia com aprovação do administrador). Rode depois do `servicos_estoque.sql`.
+   6. `consultas.sql` é **opcional**: só consultas de leitura de exemplo, para ver os dados do banco. Não altera nada.
 3. Defina as variáveis de ambiente (nunca escreva senhas no código):
    - `DB_PASSWORD`: senha do PostgreSQL. Obrigatória.
    - `SMTP_USUARIO` e `SMTP_SENHA`: conta e senha de app para enviar e-mails. Opcionais (veja "Recuperação de senha").
@@ -40,8 +42,8 @@ Os testes criam contas de teste e as apagam no fim. Eles leem o banco com os dad
 
 ## 👤 Contas, login e administrador
 - **Cidadão:** cria a conta em `cadastro.html` (nome, e-mail, senha e aceite da política de privacidade). Entra em `entrar.html`, vê a conta em "Minha conta", troca a senha, salva favoritos e pode apagar a própria conta.
-- **Farmácia:** o cidadão pede acesso em `farmacia-acesso.html` (CNPJ e telefone da farmácia). Depois que o administrador aprova, a conta vira de farmácia e aparece o **Painel da farmácia**, onde ela informa remédios, preços e estoque.
-- **Administrador:** a área `admin.html` aprova, recusa e revoga pedidos de farmácia, e mostra um resumo. A tela **nunca** cria administrador. Isso só é feito pelo terminal:
+- **Farmácia:** veja "Cadastro de farmácia e aprovação" abaixo.
+- **Administrador:** a área `admin.html` aprova, recusa e revoga cadastros de farmácia, e mostra um resumo. A tela **nunca** cria administrador. Isso só é feito pelo terminal:
 
       java -cp "out;lib/*" CriarAdmin
 
@@ -54,6 +56,25 @@ Os testes criam contas de teste e as apagam no fim. Eles leem o banco com os dad
 - **Esqueci minha senha**: em `entrar.html`. A pessoa digita o e-mail e recebe um link que vale 30 minutos e serve uma vez só. A resposta é sempre a mesma, exista a conta ou não.
 - **Com SMTP configurado** (`SMTP_USUARIO` e `SMTP_SENHA`), o link vai por e-mail.
 - **Sem SMTP** (modo de desenvolvimento, o padrão), nada é enviado. O servidor escreve no console: `E-mail não configurado; link de redefinição: ...`. É assim que se testa e se demonstra sem e-mail. **Não rode sem SMTP em um ambiente de verdade**: qualquer pessoa com acesso ao console lê o link.
+
+## 🩺 Serviços gratuitos e estoque por lote
+No **Painel da farmácia** (`painel-farmacia.html`, para a conta de uma farmácia aprovada ou com cadastro novo em análise) há duas abas:
+- **Estoque**: cada remédio tem um ou mais lotes, com lote, validade, quantidade, preço de venda e, se quiser, preço de custo e fornecedor. Também dá para definir um estoque mínimo (o painel avisa quando faltar) e cadastrar um remédio que ainda não está na lista, com apresentação, tipo (referência, genérico ou similar) e se exige receita. Lotes vencidos ou perto de vencer (30 dias) ficam destacados.
+- **Serviços gratuitos**: a farmácia escolhe da lista (aferição de pressão, glicemia, hemoglobina, colesterol...) ou digita um serviço próprio, com dias e horários, se precisa agendar e uma observação. Dá para pausar um serviço sem apagar.
+
+Como o estoque conversa com a busca pública: a quantidade e o preço usados em `/api/precos` são recalculados a cada alteração. Só entram lotes que não venceram, e o preço é o do lote que vence primeiro. Se todos os lotes de um remédio vencerem, a farmácia deixa de aparecer na busca dele, mesmo que ninguém abra o painel.
+
+Rotas novas: `GET/POST /api/painel/estoque`, `GET/POST /api/painel/servicos` (as duas exigem a conta da farmácia) e `GET /api/servicos?farmacia=ID` (público, só serviços ativos).
+
+## 🏪 Cadastro de farmácia e aprovação
+1. A pessoa cria uma conta e abre `farmacia-acesso.html` (**Cadastrar farmácia**). Informa CNPJ e telefone. Se o CNPJ for novo, a tela pede nome, **cidade (só Sorocaba ou Votorantim)**, rua e número, bairro e CEP, e o botão **Localizar no mapa** acha o ponto pelo Mapbox. A localização precisa ser marcada para enviar.
+2. Ao enviar, a farmácia é criada na hora como **pendente**. Ela **já pode usar o painel** para lançar estoque, preços e serviços gratuitos, mas fica **fora do mapa, da busca de preços, dos favoritos e dos serviços públicos**.
+3. O cadastro cai em `admin.html` (filtro "Pendentes"), com endereço, bairro, CEP, um link para conferir o ponto no mapa e o que já foi lançado. O administrador **aprova** (a farmácia passa a aparecer para todos) ou **recusa**.
+4. **Revogar** ou **recusar** esconde a farmácia de novo e fecha o painel. O estoque e os serviços ficam guardados. A mesma conta pode corrigir os dados e reenviar o cadastro: a farmácia é reaproveitada, sem duplicar.
+
+Se o CNPJ já está na base pública (farmácias do CNES), não é cadastro novo: vira um **pedido de acesso** a uma farmácia que já aparece no mapa. Nesse caso o painel só abre **depois** da aprovação, para ninguém mexer nos preços de uma farmácia pública antes de o administrador confirmar quem é.
+
+O servidor confere de novo o que a tela mandou: CNPJ, cidade e se a localização está dentro da área de Sorocaba e Votorantim. A posição vem do navegador, então o administrador deve conferir o ponto no link do cadastro antes de aprovar.
 
 ### Contas de demonstração (`demo.sql`)
 **Só para testar o projeto.** A senha é pública: `Demo@2026`.
@@ -87,7 +108,8 @@ Sem `config.js` a página mostra o aviso de que a chave do mapa falta.
 - `Login.java`: cadastro, entrar, sair, quem está logado, apagar conta e a regra de administrador.
 - `RedefinirSenha.java`: trocar senha e recuperação de senha por link.
 - `Favoritos.java`: favoritos de farmácias, UBS e remédios.
-- `PainelFarmacia.java`: pedido de acesso da farmácia e o painel de preços.
+- `PainelFarmacia.java`: cadastro da farmácia, regra de acesso ao painel e o painel de preços.
+- `ServicosFarmacia.java` e `EstoqueFarmacia.java`: serviços gratuitos e estoque por lote.
 - `Admin.java`: área do administrador (resumo e decisões sobre os pedidos).
 - `Senha.java`: senha com PBKDF2 e sal aleatório.
 - `Email.java`: envio de e-mail pelo SMTP (Jakarta Mail).
@@ -98,7 +120,7 @@ Sem `config.js` a página mostra o aviso de que a chave do mapa falta.
 ## 🧭 Páginas
 - `index.html`: o mapa, a lista de farmácias e UBS, e "Remédio e preço".
 - `entrar.html`, `cadastro.html`, `esqueci-senha.html`, `redefinir-senha.html`, `conta.html`: login, cadastro e senha.
-- `favoritos.html`, `farmacia-acesso.html`, `painel-farmacia.html`: favoritos, pedido de acesso e painel da farmácia.
+- `favoritos.html`, `farmacia-acesso.html`, `painel-farmacia.html`: favoritos, cadastro e painel da farmácia.
 - `admin.html`: área do administrador. `remedios.html`: remédios cadastrados (com o selo de origem).
 - `sobre.html`: de onde vêm os dados, o que os avisos significam, a privacidade e a segurança.
 

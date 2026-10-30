@@ -158,16 +158,18 @@ public class TesteSimples {
         verificar("CNPJ inválido dá 400",
                 post("/api/acesso-farmacia", origem, form("cnpj", "11111111111111", "telefone", "15999991111"), cookie).statusCode() == 400);
         verificar("CNPJ fora da base sem nome e endereço dá 400",
-                post("/api/acesso-farmacia", origem, form("cnpj", "11222333000181", "telefone", "15999991111"), cookie).statusCode() == 400);
+                post("/api/acesso-farmacia", origem, form("cnpj", "11444777000161", "telefone", "15999991111"), cookie).statusCode() == 400);
         verificar("farmácia nova sem cidade válida dá 400", post("/api/acesso-farmacia", origem,
-                form("cnpj", "11222333000181", "telefone", "15999991111", "nome", "Drogaria Teste", "endereco", "Rua Teste, 10",
-                        "cidade", "Campinas"), cookie).statusCode() == 400);
+                form("cnpj", "11444777000161", "telefone", "15999991111", "nome", "Drogaria Teste", "endereco", "Rua Teste, 10",
+                        "bairro", "Centro", "cidade", "Campinas", "latitude", "-23.5015", "longitude", "-47.4581"), cookie).statusCode() == 400);
         verificar("pedido de acesso fica pendente (201)",
-                post("/api/acesso-farmacia", origem, form("cnpj", "11222333000181", "telefone", "15999991111",
-                        "nome", "Drogaria Teste", "endereco", "Rua Teste, 10", "cidade", "Sorocaba"), cookie).statusCode() == 201);
+                post("/api/acesso-farmacia", origem, form("cnpj", "11444777000161", "telefone", "15999991111",
+                        "nome", "Drogaria Teste", "endereco", "Rua Teste, 10", "bairro", "Centro", "cidade", "Sorocaba",
+                        "latitude", "-23.5015", "longitude", "-47.4581"), cookie).statusCode() == 201);
         verificar("segundo pedido pendente é recusado (409)",
-                post("/api/acesso-farmacia", origem, form("cnpj", "11222333000181", "telefone", "15999991111",
-                        "nome", "Outra", "endereco", "Rua X, 1", "cidade", "Sorocaba"), cookie).statusCode() == 409);
+                post("/api/acesso-farmacia", origem, form("cnpj", "11444777000161", "telefone", "15999991111",
+                        "nome", "Outra", "endereco", "Rua X, 1", "bairro", "Centro", "cidade", "Sorocaba",
+                        "latitude", "-23.5015", "longitude", "-47.4581"), cookie).statusCode() == 409);
         verificar("status do pedido aparece como pendente",
                 get("/api/acesso-farmacia", cookie).body().contains("\"status\":\"pendente\""));
 
@@ -295,28 +297,100 @@ public class TesteSimples {
                 form("id", String.valueOf(recusado), "acao", "recusar"), cookieAdmin).statusCode() == 200);
         verificar("recusar não muda o tipo da conta", "cidadao".equals(tipoDaConta(emailR)));
 
+        // ----- farmácia nova: já usa o painel enquanto espera, mas só aparece ao público depois de aprovada -----
         String emailN = novoEmail("nova3");
         post("/api/cadastro", origem, form("nome", "Farmácia Nova", "email", emailN, "senha", "Senha@12345", "aceite", "sim"));
         String cookieN = cookieDe(post("/api/entrar", origem, form("email", emailN, "senha", "Senha@12345")));
-        post("/api/acesso-farmacia", origem, form("cnpj", "11222333000181", "telefone", "15999993333",
-                "nome", "Drogaria Teste B3", "endereco", "Rua Teste B3, 30", "cidade", "Sorocaba"), cookieN);
+        verificar("verificar CNPJ novo diz 'nova'",
+                get("/api/acesso-farmacia/verificar?cnpj=11222333000181", cookieN).body().contains("\"estado\":\"nova\""));
+        verificar("verificar CNPJ da base pública diz 'base'",
+                get("/api/acesso-farmacia/verificar?cnpj=" + cnpj, cookieN).body().contains("\"estado\":\"base\""));
+        verificar("verificar CNPJ inválido dá 400", get("/api/acesso-farmacia/verificar?cnpj=123", cookieN).statusCode() == 400);
+        verificar("verificar sem entrar dá 401", get("/api/acesso-farmacia/verificar?cnpj=11222333000181", null).statusCode() == 401);
+
+        String base3 = "11222333000181";
+        verificar("cadastro sem posição no mapa dá 400", post("/api/acesso-farmacia", origem,
+                form("cnpj", base3, "telefone", "15999993333", "nome", "Drogaria Teste B3", "endereco", "Rua Teste B3, 30",
+                        "bairro", "Centro", "cidade", "Sorocaba"), cookieN).statusCode() == 400);
+        verificar("cadastro com posição fora de Sorocaba e Votorantim dá 400", post("/api/acesso-farmacia", origem,
+                form("cnpj", base3, "telefone", "15999993333", "nome", "Drogaria Teste B3", "endereco", "Rua Teste B3, 30",
+                        "bairro", "Centro", "cidade", "Sorocaba", "latitude", "-22.9056", "longitude", "-47.0608"), cookieN).statusCode() == 400);
+        verificar("cadastro sem bairro dá 400", post("/api/acesso-farmacia", origem,
+                form("cnpj", base3, "telefone", "15999993333", "nome", "Drogaria Teste B3", "endereco", "Rua Teste B3, 30",
+                        "cidade", "Sorocaba", "latitude", "-23.5015", "longitude", "-47.4581"), cookieN).statusCode() == 400);
+        verificar("nada foi criado pelos cadastros inválidos",
+                contarSql("SELECT count(*) FROM farmacia WHERE cnpj = '" + base3 + "'") == 0);
+        String cadastroB3 = form("cnpj", base3, "telefone", "15999993333", "nome", "Drogaria Teste B3",
+                "endereco", "Rua Teste B3, 30", "bairro", "Centro", "cep", "18010-000", "cidade", "Sorocaba",
+                "latitude", "-23.5015", "longitude", "-47.4581", "precisao", "exata");
+        verificar("cadastro de farmácia nova dá 201 e já libera o painel",
+                post("/api/acesso-farmacia", origem, cadastroB3, cookieN).body().contains("\"painel\":true"));
+        long idNova = Long.parseLong(consultaTexto("SELECT id FROM farmacia WHERE cnpj = '" + base3 + "'"));
+        verificar("farmácia nova nasce pendente, com endereço e posição",
+                contarSql("SELECT count(*) FROM farmacia WHERE id = " + idNova + " AND situacao = 'pendente' AND cadastro_proprio "
+                        + "AND latitude IS NOT NULL AND cidade = 'Sorocaba' AND bairro = 'Centro' AND cep = '18010000' "
+                        + "AND endereco = 'Rua Teste B3, 30 - Centro' AND precisao_posicao = 'ponto do endereço'") == 1);
+        verificar("telefone da farmácia nova gravado formatado (15) 99999-3333",
+                contarSql("SELECT count(*) FROM farmacia WHERE id = " + idNova + " AND telefone = '(15) 99999-3333'") == 1);
+        verificar("outra conta vê o CNPJ como 'em análise'",
+                get("/api/acesso-farmacia/verificar?cnpj=" + base3, cookieR).body().contains("\"estado\":\"em_analise\""));
+        verificar("outra conta não consegue cadastrar o CNPJ que está em análise (400)",
+                post("/api/acesso-farmacia", origem, cadastroB3, cookieR).statusCode() == 400);
+        String pendentesAdmin = get("/api/admin/pedidos?status=pendente", cookieAdmin).body();
+        verificar("pedido da farmácia nova aparece para o administrador, com a posição",
+                pendentesAdmin.contains("Drogaria Teste B3") && pendentesAdmin.contains("\"latitude\":-23.5015"));
+
+        verificar("em análise: o painel já abre (200)", get("/api/painel", cookieN).statusCode() == 200);
+        verificar("em análise: o painel diz que está pendente",
+                get("/api/painel", cookieN).body().contains("\"situacao\":\"pendente\""));
+        verificar("em análise: o status do acesso libera o painel no menu",
+                get("/api/acesso-farmacia", cookieN).body().contains("\"painel\":true"));
+        verificar("em análise: lança lote no estoque (200)", post("/api/painel/estoque", origem,
+                form("acao", "salvar", "medicamento", "6", "lote", "T-B3", "validade", "2030-12-31", "quantidade", "10",
+                        "preco_venda", "9,99"), cookieN).statusCode() == 200);
+        verificar("em análise: cadastra serviço gratuito (200)", post("/api/painel/servicos", origem,
+                form("acao", "salvar", "servico", "1", "dias_horarios", "Seg a Sex"), cookieN).statusCode() == 200);
+        verificar("em análise: NÃO aparece no mapa", !get("/api/pontos", null).body().contains("Drogaria Teste B3"));
+        verificar("em análise: preço NÃO aparece na busca", !get("/api/precos?medicamento=6", null).body().contains("Drogaria Teste B3"));
+        verificar("em análise: serviços públicos vazios", get("/api/servicos?farmacia=" + idNova, null).body().equals("[]"));
+        verificar("em análise: não dá para favoritar (404)", post("/api/favoritos", origem,
+                form("tipo", "farmacia", "id", String.valueOf(idNova), "acao", "adicionar"), cookieN).statusCode() == 404);
+
         long nova = pedidoPendente(emailN);
         verificar("aprovar farmácia nova dá 200", post("/api/admin/pedidos", origem,
                 form("id", String.valueOf(nova), "acao", "aprovar"), cookieAdmin).statusCode() == 200);
-        verificar("farmácia nova não aparece no mapa (sem coordenada)",
-                !get("/api/pontos", null).body().contains("Drogaria Teste B3"));
-        verificar("farmácia nova existe no banco sem latitude",
-                contarSql("SELECT count(*) FROM farmacia WHERE nome = 'Drogaria Teste B3' AND latitude IS NULL") == 1);
-        String cookieNova = cookieDe(post("/api/entrar", origem, form("email", emailN, "senha", "Senha@12345")));
-        verificar("painel da farmácia sem posição salva o preço (200)", post("/api/painel", origem,
-                form("acao", "salvar", "medicamento", "6", "preco", "9,99", "disponivel", "sim"), cookieNova).statusCode() == 200);
-        String precosDeDipirona = get("/api/precos?medicamento=6", null).body();
-        verificar("preço de farmácia sem posição aparece em /api/precos (latitude null)",
-                precosDeDipirona.contains("\"nome\":\"Drogaria Teste B3\"") && precosDeDipirona.contains("\"latitude\":null"));
-        verificar("painel avisa que a farmácia ainda não está no mapa",
-                get("/api/painel", cookieNova).body().contains("\"temPosicao\":false"));
-        verificar("telefone da farmácia nova gravado formatado (15) 99999-3333",
-                contarSql("SELECT count(*) FROM farmacia WHERE nome = 'Drogaria Teste B3' AND telefone = '(15) 99999-3333'") == 1);
+        verificar("aprovada: aparece no mapa", get("/api/pontos", null).body().contains("Drogaria Teste B3"));
+        verificar("aprovada: preço aparece na busca", get("/api/precos?medicamento=6", null).body().contains("Drogaria Teste B3"));
+        verificar("aprovada: serviço aparece para o público",
+                get("/api/servicos?farmacia=" + idNova, null).body().contains("Aferição de pressão arterial"));
+        verificar("aprovada: o estoque lançado antes continua lá",
+                contarSql("SELECT count(*) FROM estoque_lote WHERE farmacia_id = " + idNova) == 1);
+
+        verificar("revogar a farmácia nova dá 200", post("/api/admin/pedidos", origem,
+                form("id", String.valueOf(nova), "acao", "revogar"), cookieAdmin).statusCode() == 200);
+        verificar("revogada: some do mapa", !get("/api/pontos", null).body().contains("Drogaria Teste B3"));
+        verificar("revogada: some da busca", !get("/api/precos?medicamento=6", null).body().contains("Drogaria Teste B3"));
+        verificar("revogada: o painel fecha (403)", get("/api/painel", cookieN).statusCode() == 403);
+        verificar("revogada: a farmácia fica 'recusada' no banco",
+                contarSql("SELECT count(*) FROM farmacia WHERE id = " + idNova + " AND situacao = 'recusada'") == 1);
+
+        verificar("a mesma conta reenvia o cadastro corrigido (201)", post("/api/acesso-farmacia", origem,
+                form("cnpj", base3, "telefone", "15999993333", "nome", "Drogaria Teste B3", "endereco", "Rua Teste B3, 31",
+                        "bairro", "Centro", "cidade", "Sorocaba", "latitude", "-23.5016", "longitude", "-47.4582"), cookieN).statusCode() == 201);
+        verificar("o reenvio reaproveita a mesma farmácia (sem duplicar) e volta a pendente",
+                contarSql("SELECT count(*) FROM farmacia WHERE cnpj = '" + base3 + "'") == 1
+                        && contarSql("SELECT count(*) FROM farmacia WHERE id = " + idNova + " AND situacao = 'pendente' "
+                        + "AND endereco = 'Rua Teste B3, 31 - Centro'") == 1);
+        verificar("o reenvio mantém o estoque já lançado",
+                contarSql("SELECT count(*) FROM estoque_lote WHERE farmacia_id = " + idNova) == 1);
+        verificar("o painel volta a abrir enquanto o reenvio espera (200)", get("/api/painel", cookieN).statusCode() == 200);
+        long reenviado = pedidoPendente(emailN);
+        verificar("recusar o cadastro novo dá 200", post("/api/admin/pedidos", origem,
+                form("id", String.valueOf(reenviado), "acao", "recusar"), cookieAdmin).statusCode() == 200);
+        verificar("recusado: a farmácia continua oculta",
+                !get("/api/pontos", null).body().contains("Drogaria Teste B3")
+                        && contarSql("SELECT count(*) FROM farmacia WHERE id = " + idNova + " AND situacao = 'recusada'") == 1);
+        verificar("recusado: o painel fecha (403)", get("/api/painel", cookieN).statusCode() == 403);
 
         String emailT = novoEmail("limite3");
         post("/api/cadastro", origem, form("nome", "Limite Teste", "email", emailT, "senha", "Senha@12345", "aceite", "sim"));
@@ -434,10 +508,12 @@ public class TesteSimples {
             }
         }
         try (Connection conexao = Banco.conectar()) {
-            String onde = "(SELECT id FROM farmacia WHERE cnpj = '11222333000181' AND latitude IS NULL AND nome = 'Drogaria Teste B3')";
+            String testes = "cnpj IN ('11222333000181', '11444777000161') AND nome LIKE 'Drogaria Teste%'";
+            String onde = "(SELECT id FROM farmacia WHERE " + testes + ")";
             conexao.prepareStatement("DELETE FROM preco WHERE farmacia_id IN " + onde).executeUpdate();
             conexao.prepareStatement("DELETE FROM estoque WHERE farmacia_id IN " + onde).executeUpdate();
-            conexao.prepareStatement("DELETE FROM farmacia WHERE cnpj = '11222333000181' AND latitude IS NULL AND nome = 'Drogaria Teste B3'").executeUpdate();
+            conexao.prepareStatement("DELETE FROM acesso_farmacia WHERE farmacia_id IN " + onde).executeUpdate();
+            conexao.prepareStatement("DELETE FROM farmacia WHERE " + testes).executeUpdate();
         }
     }
 
