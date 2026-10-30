@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Painel da farmácia · Farmácia Digital</title>
+    <meta name="description" content="Estoque, preços e serviços gratuitos informados pela farmácia.">
+    <script>
+        (function () {
+            try {
+                var salvo = localStorage.getItem("farmaciadigital.tema");
+                var escuro = salvo === "escuro" || (salvo === "sistema" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+                document.documentElement.setAttribute("data-bs-theme", escuro ? "dark" : "light");
+            } catch (erro) {
+                // Sem armazenamento (modo privado): a página começa no claro
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css?v=20261022b3">
+</head>
+<body>
+    <header class="navbar navbar-expand-lg sticky-top bg-body border-bottom shadow-sm">
+        <div class="container-fluid px-3 px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="index.html#inicio">
+                <svg class="cruz" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 2h6v7h7v6h-7v7H9v-7H2V9h7z"/></svg>
+                Farmácia Digital
+            </a>
+            <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal"
+                    aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menu-principal">
+                <ul class="navbar-nav ms-lg-auto gap-lg-1 align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link" href="index.html#buscar">Mapa</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#remedio">Remédio e preço</a></li>
+                    <li class="nav-item"><a class="nav-link" href="sobre.html">Sobre</a></li>
+                    <li class="nav-item" id="link-entrar" hidden><a class="nav-link" href="entrar.html">Entrar</a></li>
+                    <li class="nav-item dropdown" id="menu-conta" hidden>
+                        <button id="botao-conta" class="nav-link dropdown-toggle btn btn-link d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" fill="currentColor"/></svg>
+                            <span id="nome-usuario"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="favoritos.html">Meus favoritos</a></li>
+                            <li id="item-painel" hidden><a class="dropdown-item" href="painel-farmacia.html">Painel da farmácia</a></li>
+                            <li id="item-admin" hidden><a class="dropdown-item" href="admin.html">Área do administrador</a></li>
+                            <li><a class="dropdown-item" href="conta.html">Minha conta</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item" id="botao-sair-menu">Sair</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item py-2 py-lg-0">
+                        <div class="dropdown">
+                            <button id="botao-tema" type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">Tema: claro</button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><button type="button" class="dropdown-item" data-tema="sistema">Sistema</button></li>
+                                <li><button type="button" class="dropdown-item" data-tema="claro">Claro</button></li>
+                                <li><button type="button" class="dropdown-item" data-tema="escuro">Escuro</button></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-4 py-lg-5" style="max-width: 960px;">
+        <h1 class="display-6 fw-bold mb-1">Painel da farmácia</h1>
+        <p id="nome-farmacia" class="lead text-body-secondary mb-4"></p>
+        <div id="sem-entrar" class="alert alert-warning" hidden>
+            Entre na sua conta para ver o painel. <a href="entrar.html?voltar=%2Fpainel-farmacia.html" class="alert-link">Entrar</a>
+        </div>
+        <div id="sem-acesso" class="alert alert-warning" hidden>
+            Você ainda não tem uma farmácia cadastrada. <a href="farmacia-acesso.html" class="alert-link">Cadastrar farmácia</a>
+        </div>
+        <div id="aviso-pendente" class="alert alert-warning" role="status" hidden>
+            <strong>Cadastro em análise.</strong> Você já pode lançar o estoque e os serviços gratuitos. A farmácia só aparece no mapa e nas buscas depois que a nossa equipe aprovar.
+        </div>
+        <div id="aviso-posicao" class="alert alert-info" role="status" hidden>Sua farmácia ainda não aparece no mapa. Os preços aparecem na busca de remédios.</div>
+        <div id="aviso" class="alert alert-danger" role="alert" hidden></div>
+        <div id="aviso-ok" class="alert alert-success" role="status" hidden></div>
+
+        <div id="conteudo" hidden>
+            <ul class="nav nav-tabs mb-4" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="guia-estoque" data-bs-toggle="tab" data-bs-target="#aba-estoque"
+                            type="button" role="tab" aria-controls="aba-estoque" aria-selected="true">Estoque</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="guia-servicos" data-bs-toggle="tab" data-bs-target="#aba-servicos"
+                            type="button" role="tab" aria-controls="aba-servicos" aria-selected="false">Serviços gratuitos</button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- ===== ESTOQUE ===== -->
+                <section class="tab-pane fade show active" id="aba-estoque" role="tabpanel" aria-labelledby="guia-estoque">
+                    <div id="resumo-estoque" class="d-flex flex-wrap gap-2 mb-3"></div>
+
+                    <form id="form-lote" class="card card-body border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <h2 class="h5 fw-bold">Adicionar ou alterar um lote</h2>
+                        <div id="editando-lote" class="alert alert-secondary d-flex flex-wrap justify-content-between align-items-center gap-2 py-2" hidden>
+                            <span id="texto-editando-lote"></span>
+                            <button id="cancelar-lote" type="button" class="btn btn-sm btn-outline-secondary rounded-pill">Cancelar</button>
+                        </div>
+
+                        <div id="bloco-escolha">
+                            <div class="input-group mb-2">
+                                <input id="busca-remedio" type="search" class="form-control" placeholder="Nome do remédio, ex.: dipirona">
+                                <button id="botao-buscar" type="button" class="btn btn-outline-primary">Buscar</button>
+                            </div>
+                            <div class="mb-2">
+                                <label for="medicamento" class="form-label fw-semibold">Remédio</label>
+                                <select id="medicamento" class="form-select">
+                                    <option value="">Busque o remédio acima</option>
+                                </select>
+                            </div>
+                            <button id="alternar-novo" type="button" class="btn btn-link p-0 mb-3">Não achei o remédio: cadastrar um novo</button>
+                        </div>
+
+                        <div id="bloco-novo" class="border rounded-3 p-3 mb-3" hidden>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>Novo remédio</strong>
+                                <button id="voltar-busca" type="button" class="btn btn-link p-0">Voltar para a busca</button>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="novo-nome" class="form-label fw-semibold">Nome</label>
+                                    <input id="novo-nome" type="text" class="form-control" maxlength="100" placeholder="Losartana potássica">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="novo-apresentacao" class="form-label fw-semibold">Apresentação</label>
+                                    <input id="novo-apresentacao" type="text" class="form-control" maxlength="100" placeholder="50 mg, 30 comprimidos">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="novo-principio" class="form-label fw-semibold">Princípio ativo <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                    <input id="novo-principio" type="text" class="form-control" maxlength="100">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="novo-tipo" class="form-label fw-semibold">Tipo</label>
+                                    <select id="novo-tipo" class="form-select">
+                                        <option value="">Não informar</option>
+                                        <option value="referencia">Referência</option>
+                                        <option value="generico">Genérico</option>
+                                        <option value="similar">Similar</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <div class="form-check mb-2">
+                                        <input id="novo-receita" class="form-check-input" type="checkbox">
+                                        <label for="novo-receita" class="form-check-label">Exige receita</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6 col-md-3">
+                                <label for="lote" class="form-label fw-semibold">Lote</label>
+                                <input id="lote" type="text" class="form-control" maxlength="40" required>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="validade" class="form-label fw-semibold">Validade</label>
+                                <input id="validade" type="date" class="form-control" required>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="quantidade" class="form-label fw-semibold">Quantidade</label>
+                                <input id="quantidade" type="number" class="form-control" min="0" max="1000000" step="1" inputmode="numeric" required>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="preco-venda" class="form-label fw-semibold">Preço de venda (R$)</label>
+                                <input id="preco-venda" type="text" class="form-control" inputmode="decimal" placeholder="12,50" required>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <label for="preco-custo" class="form-label fw-semibold">Preço de custo (R$) <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                <input id="preco-custo" type="text" class="form-control" inputmode="decimal" placeholder="8,00">
+                            </div>
+                            <div class="col-sm-6 col-md-5">
+                                <label for="fornecedor" class="form-label fw-semibold">Fornecedor <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                <input id="fornecedor" type="text" class="form-control" maxlength="100">
+                            </div>
+                            <div class="col-sm-6 col-md-4">
+                                <label for="estoque-minimo" class="form-label fw-semibold">Estoque mínimo <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                <input id="estoque-minimo" type="number" class="form-control" min="0" max="100000" step="1" inputmode="numeric">
+                                <div class="form-text">Avisa aqui no painel quando faltar.</div>
+                            </div>
+                        </div>
+                        <div>
+                            <button id="botao-salvar-lote" type="submit" class="btn btn-primary btn-lg">Salvar lote</button>
+                        </div>
+                    </form>
+
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h2 class="h4 fw-bold mb-0">Estoque desta farmácia</h2>
+                        <input id="filtro-estoque" type="search" class="form-control" style="max-width: 260px;" placeholder="Filtrar por nome" aria-label="Filtrar remédios por nome">
+                    </div>
+                    <p id="vazio-estoque" class="text-body-secondary" hidden>Nenhum remédio cadastrado ainda.</p>
+                    <div id="lista-estoque"></div>
+                </section>
+
+                <!-- ===== SERVIÇOS GRATUITOS ===== -->
+                <section class="tab-pane fade" id="aba-servicos" role="tabpanel" aria-labelledby="guia-servicos">
+                    <form id="form-servico" class="card card-body border-0 shadow-sm rounded-4 p-4 mb-4">
+                        <h2 class="h5 fw-bold">Adicionar ou alterar um serviço gratuito</h2>
+                        <div id="editando-servico" class="alert alert-secondary d-flex flex-wrap justify-content-between align-items-center gap-2 py-2" hidden>
+                            <span id="texto-editando-servico"></span>
+                            <button id="cancelar-servico" type="button" class="btn btn-sm btn-outline-secondary rounded-pill">Cancelar</button>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="servico" class="form-label fw-semibold">Serviço</label>
+                                <select id="servico" class="form-select"></select>
+                            </div>
+                            <div class="col-md-6" id="bloco-nome-proprio" hidden>
+                                <label for="nome-proprio" class="form-label fw-semibold">Nome do serviço</label>
+                                <input id="nome-proprio" type="text" class="form-control" minlength="3" maxlength="80" placeholder="Ex.: Teste de gravidez rápido">
+                            </div>
+                            <div class="col-12">
+                                <label for="dias-horarios" class="form-label fw-semibold">Dias e horários <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                <input id="dias-horarios" type="text" class="form-control" maxlength="200" placeholder="Seg a Sex, das 8h às 17h">
+                            </div>
+                            <div class="col-12">
+                                <label for="observacao" class="form-label fw-semibold">Observação <span class="text-body-secondary fw-normal">(opcional)</span></label>
+                                <input id="observacao" type="text" class="form-control" maxlength="300" placeholder="Ex.: não precisa de jejum">
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check">
+                                    <input id="exige-agendamento" class="form-check-input" type="checkbox">
+                                    <label for="exige-agendamento" class="form-check-label">Precisa agendar</label>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-check">
+                                    <input id="servico-ativo" class="form-check-input" type="checkbox" checked>
+                                    <label for="servico-ativo" class="form-check-label">Disponível agora (aparece para o público)</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <button id="botao-salvar-servico" type="submit" class="btn btn-primary btn-lg">Salvar serviço</button>
+                        </div>
+                    </form>
+
+                    <h2 class="h4 fw-bold">Serviços desta farmácia</h2>
+                    <p id="vazio-servicos" class="text-body-secondary" hidden>Nenhum serviço cadastrado ainda.</p>
+                    <ul id="lista-servicos" class="list-group"></ul>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer class="border-top py-4 bg-body">
+        <div class="container d-flex flex-wrap justify-content-between gap-2 small text-body-secondary">
+            <span>Dados: Receita Federal, CNES (DataSUS), IBGE e OpenStreetMap.</span>
+            <a href="sobre.html">Sobre os dados e a privacidade</a>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="js/tema.js?v=20261022b3"></script>
+    <script src="js/sessao.js?v=20261022b3"></script>
+    <script>
+        new Tema(document.getElementById("botao-tema"), [...document.querySelectorAll("[data-tema]")]);
+        Sessao.iniciar();
+    </script>
+    <script src="js/painel-farmacia.js?v=20261028"></script>
+</body>
+</html>

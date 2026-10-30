@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sobre os dados · Farmácia Digital</title>
+    <meta name="description" content="De onde vêm os dados de farmácias e UBS, o que significam os avisos do mapa, o que não podemos afirmar e como tratamos a privacidade.">
+    <script>
+        (function () {
+            try {
+                var salvo = localStorage.getItem("farmaciadigital.tema");
+                var escuro = salvo === "escuro" || (salvo === "sistema" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+                document.documentElement.setAttribute("data-bs-theme", escuro ? "dark" : "light");
+            } catch (erro) {
+                // Sem armazenamento (modo privado): a página começa no claro
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css?v=20261022b3">
+</head>
+<body>
+    <header class="navbar navbar-expand-lg sticky-top bg-body border-bottom shadow-sm">
+        <div class="container-fluid px-3 px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="index.html#inicio">
+                <svg class="cruz" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 2h6v7h7v6h-7v7H9v-7H2V9h7z"/></svg>
+                Farmácia Digital
+            </a>
+            <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal"
+                    aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menu-principal">
+                <ul class="navbar-nav ms-lg-auto gap-lg-1 align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link" href="index.html#buscar">Mapa</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#remedio">Remédio e preço</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="sobre.html">Sobre</a></li>
+                    <li class="nav-item" id="link-entrar" hidden><a class="nav-link" href="entrar.html">Entrar</a></li>
+                    <li class="nav-item dropdown" id="menu-conta" hidden>
+                        <button id="botao-conta" class="nav-link dropdown-toggle btn btn-link d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" fill="currentColor"/></svg>
+                            <span id="nome-usuario"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="favoritos.html">Meus favoritos</a></li>
+                            <li id="item-painel" hidden><a class="dropdown-item" href="painel-farmacia.html">Painel da farmácia</a></li>
+                            <li id="item-admin" hidden><a class="dropdown-item" href="admin.html">Área do administrador</a></li>
+                            <li><a class="dropdown-item" href="conta.html">Minha conta</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item" id="botao-sair-menu">Sair</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item py-2 py-lg-0">
+                        <div class="dropdown">
+                            <button id="botao-tema" type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">Tema: claro</button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><button type="button" class="dropdown-item" data-tema="sistema">Sistema</button></li>
+                                <li><button type="button" class="dropdown-item" data-tema="claro">Claro</button></li>
+                                <li><button type="button" class="dropdown-item" data-tema="escuro">Escuro</button></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-5" style="max-width: 880px;">
+        <h1 class="display-6 fw-bold mb-3">Sobre os dados</h1>
+        <p class="lead text-body-secondary">De onde vêm as farmácias e as UBS do mapa, o que significam os avisos e o que ainda não podemos afirmar. Coleta feita em 15/10/2026.</p>
+
+        <section class="mt-5" aria-labelledby="numeros">
+            <h2 id="numeros" class="h4 fw-bold">Os números</h2>
+            <div class="row g-3 mt-1">
+                <div class="col-sm-6"><div class="card card-body border-0 shadow-sm rounded-4 h-100">
+                    <span class="display-6 fw-bold text-primary">378</span>
+                    <span>farmácias: 323 em Sorocaba e 55 em Votorantim (376 empresas com CNPJ ativo e farmácia como atividade principal, mais 2 farmácias públicas do CNES).</span>
+                </div></div>
+                <div class="col-sm-6"><div class="card card-body border-0 shadow-sm rounded-4 h-100">
+                    <span class="display-6 fw-bold text-primary">49</span>
+                    <span>UBS: 33 em Sorocaba e 16 em Votorantim, conferidas entre o CNES e a lista do Ministério da Saúde.</span>
+                </div></div>
+            </div>
+            <p class="mt-3">Das 378 farmácias, <strong>245 (65%)</strong> estão no ponto exato do endereço ou foram confirmadas por fontes. <strong>54 (14%)</strong> têm posição estimada pelos vizinhos do IBGE: no mapa aparecem sem foto da fachada. <strong>79 (21%)</strong> estão só na rua, no CEP ou com uma única fonte: aparecem marcadas como <em>localização aproximada</em>.</p>
+        </section>
+
+        <section class="mt-5" aria-labelledby="fontes">
+            <h2 id="fontes" class="h4 fw-bold">De onde vêm os dados</h2>
+            <ul class="list-group list-group-flush mt-3">
+                <li class="list-group-item bg-transparent px-0"><strong>Receita Federal</strong> (CNPJ Dados Abertos, competência 10/2026): quais farmácias existem, com CNPJ ativo, atividade, endereço e CEP.</li>
+                <li class="list-group-item bg-transparent px-0"><strong>CNES, DataSUS / Ministério da Saúde</strong>: UBS ativas, farmácias cadastradas, coordenadas e contatos. Também a lista nacional de UBS, para conferência.</li>
+                <li class="list-group-item bg-transparent px-0"><strong>IBGE</strong>: endereços do Censo 2022 (CNEFE), usados para a coordenada de cada número, e os contornos oficiais de Sorocaba e Votorantim.</li>
+                <li class="list-group-item bg-transparent px-0"><strong>OpenStreetMap</strong> (comunidade, licença ODbL): ajuda a confirmar a posição. Nunca é a única prova de que uma farmácia existe.</li>
+                <li class="list-group-item bg-transparent px-0"><strong>Nominatim e BrasilAPI</strong>: posição aproximada pela rua ou pelo CEP, quando as outras fontes não cobrem o endereço.</li>
+                <li class="list-group-item bg-transparent px-0"><strong>Prefeitura de Sorocaba (Portal 156)</strong>: conferência do número de UBS (a Prefeitura também fala em 33 em Sorocaba).</li>
+            </ul>
+            <p class="small text-body-secondary mt-3">Detalhes e método completos estão no relatório de fontes do projeto (RELATORIO_FONTES_DOS_DADOS.md).</p>
+        </section>
+
+        <section class="mt-5" aria-labelledby="avisos">
+            <h2 id="avisos" class="h4 fw-bold">O que significam os avisos</h2>
+            <dl class="row mt-3">
+                <dt class="col-sm-4"><span class="badge text-bg-warning">Localização aproximada</span></dt>
+                <dd class="col-sm-8">A posição foi achada só pela rua ou pelo CEP. O ponto fica na rua certa, mas pode estar a algumas centenas de metros do número. Nesses casos não mostramos foto da fachada.</dd>
+                <dt class="col-sm-4"><span class="badge text-bg-secondary">Dados de exemplo (fictícios)</span></dt>
+                <dd class="col-sm-8">Preços e estoques de exemplo, criados só para demonstrar a busca. Não são informações reais de nenhuma farmácia.</dd>
+                <dt class="col-sm-4"><span class="badge text-bg-secondary">Farmácia pública</span></dt>
+                <dd class="col-sm-8">Farmácia da rede pública cadastrada no CNES, como as de medicamentos de alto custo.</dd>
+                <dt class="col-sm-4">Horário não informado</dt>
+                <dd class="col-sm-8">Nenhuma fonte tem o horário dessa unidade. Quando a fonte tem horário, mostramos o texto original e, quando dá para entender com segurança, a tabela por dia. Em feriados, confirme com a loja.</dd>
+            </dl>
+        </section>
+
+        <section class="mt-5" aria-labelledby="limites">
+            <h2 id="limites" class="h4 fw-bold">O que ainda não podemos afirmar</h2>
+            <ul class="mt-3">
+                <li>Que 378 é o total exato de farmácias das duas cidades. Não há número oficial para comparar.</li>
+                <li>Que todas as farmácias estão abertas hoje. "CNPJ ativo" é a situação cadastral na Receita, e não o horário de funcionamento.</li>
+                <li>Preço e estoque reais. Nenhuma fonte oficial informa isso. Hoje só as farmácias de exemplo têm preço e estoque.</li>
+                <li>Que as 45 farmácias de manipulação vendam medicamentos industrializados. Elas estão no mapa como farmácias, porque preparam fórmulas.</li>
+            </ul>
+        </section>
+
+        <section class="mt-5" aria-labelledby="privacidade">
+            <h2 id="privacidade" class="h4 fw-bold">Privacidade</h2>
+            <ul class="mt-3">
+                <li><strong>Endereço digitado:</strong> enquanto você digita, o texto é enviado ao Mapbox, que devolve as sugestões de endereço. O site não guarda esse texto. Quem guarda os dados do serviço é o Mapbox, conforme a política dele.</li>
+                <li><strong>Sua localização</strong> ("Usar minha localização"): fica só nesta página, no seu aparelho. Não é enviada ao nosso servidor nem guardada.</li>
+                <li><strong>Links externos:</strong> "Como chegar" e "Street View" abrem o Google Maps em outra aba, com a posição da farmácia.</li>
+            </ul>
+        </section>
+
+        <section class="mt-5" aria-labelledby="politica">
+            <h2 id="politica" class="h4 fw-bold">Política de privacidade e conta</h2>
+            <ul class="mt-3">
+                <li><strong>O que pedimos para criar uma conta:</strong> nome, e-mail e senha. Não pedimos CPF nem outros documentos.</li>
+                <li><strong>Sua senha não fica guardada.</strong> Guardamos só um resumo calculado com um código aleatório (o "sal"). Com o resumo não dá para recuperar a senha.</li>
+                <li><strong>Aceite:</strong> ao criar a conta, você marca que leu e aceita esta política. Guardamos a data do aceite.</li>
+                <li><strong>Sessão:</strong> ao entrar, o navegador recebe um cookie que vale por 8 horas. Sair apaga o cookie.</li>
+                <li><strong>Apagar a conta:</strong> em "Minha conta", você apaga a conta e os favoritos, digitando a senha de novo.</li>
+                <li><strong>Contas de demonstração:</strong> as contas de exemplo do projeto têm senha pública. Não use dados reais nelas.</li>
+            </ul>
+        </section>
+
+        <section class="mt-5" aria-labelledby="seguranca">
+            <h2 id="seguranca" class="h4 fw-bold">Segurança e privacidade</h2>
+            <p class="mt-3">Cuidamos dos seus dados com o básico bem feito. Em linguagem simples:</p>
+            <ul>
+                <li><strong>Sua senha não é guardada.</strong> Guardamos um resumo dela (um "hash" calculado com um código aleatório só dessa conta, o "sal"). Com o resumo não dá para descobrir a senha, e duas contas com a mesma senha têm resumos diferentes.</li>
+                <li><strong>Não pedimos CPF</strong> nem outros documentos. Só nome, e-mail e senha.</li>
+                <li><strong>Você pode apagar a sua conta</strong> em "Minha conta", digitando a senha. Os favoritos vão junto.</li>
+                <li><strong>Erros de senha bloqueiam</strong> o e-mail por 10 minutos depois de 5 tentativas erradas.</li>
+                <li><strong>Sessão com prazo:</strong> ela vale 8 horas. Em um computador que não é seu, clique em "Sair".</li>
+                <li><strong>Recuperação de senha:</strong> o link enviado por e-mail vale 30 minutos e funciona uma vez só. Ninguém consegue usar um link antigo.</li>
+                <li><strong>Administração:</strong> só a equipe do projeto tem acesso à área do administrador, e a conta de administrador é criada no computador do projeto, nunca pelo site.</li>
+            </ul>
+        </section>
+
+        <section class="mt-5" aria-labelledby="quem">
+            <h2 id="quem" class="h4 fw-bold">Quem fez</h2>
+            <p>Projeto de Extensão em Mobilidade e Urbanização, UPX IV, Centro Universitário Facens, Sorocaba, 2026.</p>
+            <p class="mb-0">Equipe: Celso William Leite Ferreira, Felipe Delgado de Salles, Isabelle Silva Ribeiro, Luis Eduardo dos Santos Moura, Maria Clara da Silva e Samoel Ribeiro Frauzino.</p>
+        </section>
+
+        <p class="mt-5"><a class="btn btn-outline-primary rounded-pill" href="index.html#inicio">Voltar ao mapa</a></p>
+    </main>
+
+    <footer class="border-top py-4 bg-body">
+        <div class="container d-flex flex-wrap justify-content-between gap-2 small text-body-secondary">
+            <span>Dados: Receita Federal, CNES (DataSUS), IBGE e OpenStreetMap.</span>
+            <a href="sobre.html">Sobre os dados e a privacidade</a>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="js/tema.js?v=20261022b3"></script>
+    <script>
+        // Liga o seletor de tema desta página (a mesma classe usada na página inicial)
+        new Tema(document.getElementById("botao-tema"), [...document.querySelectorAll("[data-tema]")]);
+    </script>
+    <script src="js/sessao.js?v=20261022b3"></script>
+    <script>Sessao.iniciar();</script>
+</body>
+</html>

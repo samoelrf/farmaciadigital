@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Remédios cadastrados · Farmácia Digital</title>
+    <meta name="description" content="Todos os remédios cadastrados e em quais farmácias de Sorocaba e Votorantim eles estão.">
+    <script>
+        (function () {
+            try {
+                var salvo = localStorage.getItem("farmaciadigital.tema");
+                var escuro = salvo === "escuro" || (salvo === "sistema" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+                document.documentElement.setAttribute("data-bs-theme", escuro ? "dark" : "light");
+            } catch (erro) {
+                // Sem armazenamento (modo privado): a página começa no claro
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css?v=20261022b3">
+</head>
+<body>
+    <header class="navbar navbar-expand-lg sticky-top bg-body border-bottom shadow-sm">
+        <div class="container-fluid px-3 px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="index.html#inicio">
+                <svg class="cruz" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 2h6v7h7v6h-7v7H9v-7H2V9h7z"/></svg>
+                Farmácia Digital
+            </a>
+            <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal"
+                    aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menu-principal">
+                <ul class="navbar-nav ms-lg-auto gap-lg-1 align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link" href="index.html#buscar">Mapa</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#remedio">Remédio e preço</a></li>
+                    <li class="nav-item"><a class="nav-link" href="sobre.html">Sobre</a></li>
+                    <li class="nav-item" id="link-entrar" hidden><a class="nav-link" href="entrar.html">Entrar</a></li>
+                    <li class="nav-item dropdown" id="menu-conta" hidden>
+                        <button id="botao-conta" class="nav-link dropdown-toggle btn btn-link d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" fill="currentColor"/></svg>
+                            <span id="nome-usuario"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="favoritos.html">Meus favoritos</a></li>
+                            <li id="item-painel" hidden><a class="dropdown-item" href="painel-farmacia.html">Painel da farmácia</a></li>
+                            <li id="item-admin" hidden><a class="dropdown-item" href="admin.html">Área do administrador</a></li>
+                            <li><a class="dropdown-item" href="conta.html">Minha conta</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item" id="botao-sair-menu">Sair</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item py-2 py-lg-0">
+                        <div class="dropdown">
+                            <button id="botao-tema" type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">Tema: claro</button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><button type="button" class="dropdown-item" data-tema="sistema">Sistema</button></li>
+                                <li><button type="button" class="dropdown-item" data-tema="claro">Claro</button></li>
+                                <li><button type="button" class="dropdown-item" data-tema="escuro">Escuro</button></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-4 py-lg-5" style="max-width: 920px;">
+        <h1 class="display-6 fw-bold mb-2">Remédios cadastrados</h1>
+        <p class="lead text-body-secondary mb-3">Tudo o que está cadastrado no banco: cada remédio e a farmácia onde ele está. Serve para ver de quais farmácias já temos informação.</p>
+        <p id="resumo" class="fw-semibold mb-3" aria-live="polite"></p>
+
+        <div id="aviso-exemplo" class="alert alert-warning small" role="note" hidden>
+            Os dados de hoje são <strong>de exemplo (fictícios)</strong>. Nenhum estoque ou preço aqui é de uma farmácia real.
+        </div>
+        <div id="aviso-catalogo" class="alert alert-danger" role="alert" hidden></div>
+
+        <div class="card card-body border-0 shadow-sm rounded-4 p-3 p-lg-4 mb-4" role="search">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label for="busca-catalogo" class="form-label fw-semibold">Buscar remédio ou farmácia</label>
+                    <input id="busca-catalogo" type="search" class="form-control" autocomplete="off"
+                           placeholder="Ex.: losartana ou Flores">
+                </div>
+                <div class="col-md-4">
+                    <label for="filtro-farmacia" class="form-label fw-semibold">Farmácia</label>
+                    <select id="filtro-farmacia" class="form-select">
+                        <option value="">Todas as farmácias</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button id="limpar-filtros" type="button" class="btn btn-outline-primary w-100">Limpar filtros</button>
+                </div>
+            </div>
+        </div>
+
+        <p id="mensagem-catalogo" class="fw-semibold" aria-live="polite"></p>
+        <div id="lista-catalogo"></div>
+
+        <p class="mt-4"><a class="btn btn-outline-primary rounded-pill" href="index.html#inicio">Voltar ao mapa</a></p>
+    </main>
+
+    <footer class="border-top py-4 bg-body">
+        <div class="container d-flex flex-wrap justify-content-between gap-2 small text-body-secondary">
+            <span>Dados: Receita Federal, CNES (DataSUS), IBGE e OpenStreetMap.</span>
+            <a href="sobre.html">Sobre os dados e a privacidade</a>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="js/api.js?v=20261022b3"></script>
+    <script src="js/tema.js?v=20261022b3"></script>
+    <script src="js/catalogo.js?v=20261022b3"></script>
+    <script src="js/sessao.js?v=20261022b3"></script>
+    <script>
+        // Liga a página: tema, filtros e a lista (os dados vêm da API)
+        new Tema(document.getElementById("botao-tema"), [...document.querySelectorAll("[data-tema]")]);
+        const catalogo = new Catalogo({
+            elementos: {
+                busca: document.getElementById("busca-catalogo"),
+                filtro: document.getElementById("filtro-farmacia"),
+                limpar: document.getElementById("limpar-filtros"),
+                resumo: document.getElementById("resumo"),
+                avisoExemplo: document.getElementById("aviso-exemplo"),
+                avisoErro: document.getElementById("aviso-catalogo"),
+                mensagem: document.getElementById("mensagem-catalogo"),
+                lista: document.getElementById("lista-catalogo"),
+            },
+            api: new Api(""),
+        });
+        catalogo.carregar();
+        Sessao.iniciar();
+    </script>
+</body>
+</html>
