@@ -231,8 +231,8 @@ class PainelFarmacia {
     private static long inserirFarmacia(Connection conexao, Dados dados, String cnpj, String telefone, long contaId) throws SQLException {
         try (PreparedStatement comando = conexao.prepareStatement(
                 "INSERT INTO farmacia (nome, endereco, cnpj, telefone, cidade, bairro, cep, latitude, longitude, "
-                        + "precisao_posicao, situacao, cadastro_proprio, cadastrado_por_conta_id) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', TRUE, ?) RETURNING id")) {
+                        + "precisao_posicao, situacao, cadastro_proprio, cadastrado_por_conta_id, credenciada) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', TRUE, ?, FALSE) RETURNING id")) {
             comando.setString(1, dados.nome());
             comando.setString(2, dados.endereco());
             comando.setString(3, cnpj);

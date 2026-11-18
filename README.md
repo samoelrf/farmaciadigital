@@ -1,8 +1,10 @@
 # Farmácia Digital
 
-Mapa das farmácias e UBS de Sorocaba e Votorantim, com busca por endereço, horário de funcionamento e preço de remédios. Tem também login: cidadãos salvam favoritos, farmácias informam preços, e o administrador aprova as farmácias.
+Mapa das farmácias de Sorocaba e Votorantim, com destaque para as 117 do Farmácia Popular entre as 378 farmácias reais, com busca por endereço, horário de funcionamento e preço de remédios. Tem também login: cidadãos salvam favoritos, farmácias informam preços, e o administrador aprova as farmácias.
 
 **Atenção:** os preços e estoques de exemplo são **fictícios**. Nenhuma fonte oficial informa preço ou estoque.
+
+**Farmácia Popular:** o programa é uma rede de farmácias credenciadas do governo federal. O mapa destaca as 117 farmácias do programa (102 em Sorocaba e 15 em Votorantim) entre as 378 farmácias reais. Fonte: Ministério da Saúde (painel Farmácia Popular do Brasil, dados até 28/10/2026). Confirme na farmácia o que está disponível e as regras.
 
 ## 🧠 Tecnologias
 - **Servidor:** Java puro (`com.sun.net.httpserver`), sem framework e sem Maven. Conexão com o banco por JDBC.
@@ -18,12 +20,13 @@ Mapa das farmácias e UBS de Sorocaba e Votorantim, com busca por endereço, hor
 ## ▶️ Como rodar
 1. Crie o banco `farmaciadigital` no PostgreSQL.
 2. Rode os scripts de `banco/`, nesta ordem (todos podem ser rodados de novo):
-   1. `tabela.sql`, `dados.sql`, `precos.sql`, `farmacias_reais.sql`, `ubs.sql`, `horarios.sql` (dados do mapa);
+   1. `tabela.sql`, `dados.sql`, `precos.sql`, `farmacias_reais.sql`, depois `farmacia_popular.sql` (marca as farmácias do Farmácia Popular; precisa vir depois de `farmacias_reais.sql`), `ubs.sql` (a tabela `ubs` continua no banco, mas o site não usa mais) e `horarios.sql` (dados do mapa);
    2. `login.sql` (tabelas do login, favoritos, pedidos de farmácia e recuperação de senha);
    3. `demo.sql` **só para demonstração** (veja abaixo).
    4. `servicos_estoque.sql` (serviços gratuitos e estoque por lote). Rode **depois** do `demo.sql`, porque ele acerta o contador de ids dos remédios.
    5. `cadastro_farmacia.sql` (cadastro de farmácia com aprovação do administrador). Rode depois do `servicos_estoque.sql`.
-   6. `consultas.sql` é **opcional**: só consultas de leitura de exemplo, para ver os dados do banco. Não altera nada.
+   6. `doacoes.sql` (doação de medicamentos e pedidos de quem não pode pagar). Rode **depois** do `cadastro_farmacia.sql`. Pode ser rodado de novo.
+   7. `consultas.sql` é **opcional**: só consultas de leitura de exemplo, para ver os dados do banco. Não altera nada.
 3. Defina as variáveis de ambiente (nunca escreva senhas no código):
    - `DB_PASSWORD`: senha do PostgreSQL. Obrigatória.
    - `SMTP_USUARIO` e `SMTP_SENHA`: conta e senha de app para enviar e-mails. Opcionais (veja "Recuperação de senha").
@@ -39,6 +42,23 @@ Mapa das farmácias e UBS de Sorocaba e Votorantim, com busca por endereço, hor
     java -Dstdout.encoding=UTF-8 -cp "out;lib/*" TesteSimples
 
 Os testes criam contas de teste e as apagam no fim. Eles leem o banco com os dados já carregados.
+
+## 🤝 Doação de medicamentos
+Quem tem remédio em casa, lacrado e dentro da validade, pode **doar** para uma farmácia aprovada (`doacoes.html`). Quem precisa e não tem como pagar **pede** o remédio e a quantidade (na mesma página, aba "Preciso de um remédio"). Sem diagnóstico, sem motivo.
+
+O fluxo:
+1. O doador registra o remédio, a quantidade, a validade (pelo menos 30 dias à frente) e a farmácia onde vai entregar. A doação fica **aguardando conferência**.
+2. A farmácia abre `painel-doacoes.html`, confere lacre, validade e embalagem, e **confirma** (ou **recusa**). Só o confirmado entra no estoque para repasse.
+3. O painel mostra, por remédio, quanto a farmácia tem doado e quantos pedidos abertos existem, e quanto ela **pode dar agora** (o menor dos dois).
+4. Em cada pedido, a farmácia entrega tudo o que consegue ou uma quantidade escolhida. A entrega usa primeiro o que vence antes. Quem pediu vê o status em "Meus pedidos".
+
+O banco garante as regras mesmo que o site falhe: o trigger `fn_valida_atendimento_doacao` recusa entrega com remédio diferente, farmácia errada, doação vencida ou pedido já fechado, e `fn_baixa_doacao` desconta sozinho da doação e do pedido. Um pedido não pode ser atendido duas vezes, e o estoque doado não fica negativo.
+
+Privacidade: a farmácia vê só o primeiro nome de quem pediu, sem telefone nem e-mail. Cada conta tem no máximo 5 pedidos abertos.
+
+**Atenção legal:** repassar medicamento doado por particular pode esbarrar em regras da Vigilância Sanitária e da ANVISA. Confirme as regras com a Vigilância local antes de usar de verdade.
+
+Rotas novas: `GET /api/doacoes/farmacias` (público); `GET/POST /api/doacoes` e `GET /api/doacoes/minhas`; `GET/POST /api/necessidades`, `GET /api/necessidades/minhas` e `POST /api/necessidades/cancelar` (conta logada); `GET/POST /api/painel/doacoes` (conta de farmácia aprovada, com `acao` = `confirmar`, `recusar` ou `atender`).
 
 ## 👤 Contas, login e administrador
 - **Cidadão:** cria a conta em `cadastro.html` (nome, e-mail, senha e aceite da política de privacidade). Entra em `entrar.html`, vê a conta em "Minha conta", troca a senha, salva favoritos e pode apagar a própria conta.
@@ -107,9 +127,10 @@ Sem `config.js` a página mostra o aviso de que a chave do mapa falta.
 - `Rotas.java`: consultas do mapa, de medicamentos, de preços e do catálogo.
 - `Login.java`: cadastro, entrar, sair, quem está logado, apagar conta e a regra de administrador.
 - `RedefinirSenha.java`: trocar senha e recuperação de senha por link.
-- `Favoritos.java`: favoritos de farmácias, UBS e remédios.
+- `Favoritos.java`: favoritos de farmácias e remédios.
 - `PainelFarmacia.java`: cadastro da farmácia, regra de acesso ao painel e o painel de preços.
 - `ServicosFarmacia.java` e `EstoqueFarmacia.java`: serviços gratuitos e estoque por lote.
+- `Doacoes.java`: doação de medicamentos, pedidos de quem precisa e o painel de doações da farmácia.
 - `Admin.java`: área do administrador (resumo e decisões sobre os pedidos).
 - `Senha.java`: senha com PBKDF2 e sal aleatório.
 - `Email.java`: envio de e-mail pelo SMTP (Jakarta Mail).
@@ -118,7 +139,7 @@ Sem `config.js` a página mostra o aviso de que a chave do mapa falta.
 - `testes/TesteSimples.java`: os testes, sem framework.
 
 ## 🧭 Páginas
-- `index.html`: o mapa, a lista de farmácias e UBS, e "Remédio e preço".
+- `index.html`: o mapa, a lista de farmácias (com o selo Farmácia Popular), e "Remédio e preço".
 - `entrar.html`, `cadastro.html`, `esqueci-senha.html`, `redefinir-senha.html`, `conta.html`: login, cadastro e senha.
 - `favoritos.html`, `farmacia-acesso.html`, `painel-farmacia.html`: favoritos, cadastro e painel da farmácia.
 - `admin.html`: área do administrador. `remedios.html`: remédios cadastrados (com o selo de origem).

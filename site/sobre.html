@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sobre os dados · Farmácia Digital</title>
-    <meta name="description" content="De onde vêm os dados de farmácias e UBS, o que significam os avisos do mapa, o que não podemos afirmar e como tratamos a privacidade.">
+    <meta name="description" content="De onde vêm os dados das farmácias e do Farmácia Popular, o que significam os avisos do mapa, o que não podemos afirmar e como tratamos a privacidade.">
     <script>
         (function () {
             try {
@@ -18,7 +18,7 @@
     </script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="css/style.css?v=20261022b3">
+    <link rel="stylesheet" href="css/style.css?v=20261030a">
 </head>
 <body>
     <header class="navbar navbar-expand-lg sticky-top bg-body border-bottom shadow-sm">
@@ -44,7 +44,9 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="favoritos.html">Meus favoritos</a></li>
+                            <li><a class="dropdown-item" href="doacoes.html">Doar ou pedir remédio</a></li>
                             <li id="item-painel" hidden><a class="dropdown-item" href="painel-farmacia.html">Painel da farmácia</a></li>
+                            <li id="item-painel-doacoes" hidden><a class="dropdown-item" href="painel-doacoes.html">Doações recebidas</a></li>
                             <li id="item-admin" hidden><a class="dropdown-item" href="admin.html">Área do administrador</a></li>
                             <li><a class="dropdown-item" href="conta.html">Minha conta</a></li>
                             <li><hr class="dropdown-divider"></li>
@@ -69,7 +71,7 @@
 
     <main class="container py-5" style="max-width: 880px;">
         <h1 class="display-6 fw-bold mb-3">Sobre os dados</h1>
-        <p class="lead text-body-secondary">De onde vêm as farmácias e as UBS do mapa, o que significam os avisos e o que ainda não podemos afirmar. Coleta feita em 15/10/2026.</p>
+        <p class="lead text-body-secondary">De onde vêm as farmácias do mapa e quais delas são do Farmácia Popular, o que significam os avisos e o que ainda não podemos afirmar. Coleta feita em 15/10/2026.</p>
 
         <section class="mt-5" aria-labelledby="numeros">
             <h2 id="numeros" class="h4 fw-bold">Os números</h2>
@@ -79,8 +81,8 @@
                     <span>farmácias: 323 em Sorocaba e 55 em Votorantim (376 empresas com CNPJ ativo e farmácia como atividade principal, mais 2 farmácias públicas do CNES).</span>
                 </div></div>
                 <div class="col-sm-6"><div class="card card-body border-0 shadow-sm rounded-4 h-100">
-                    <span class="display-6 fw-bold text-primary">49</span>
-                    <span>UBS: 33 em Sorocaba e 16 em Votorantim, conferidas entre o CNES e a lista do Ministério da Saúde.</span>
+                    <span class="display-6 fw-bold text-primary">117</span>
+                    <span>farmácias do Farmácia Popular entre as 378 farmácias reais: 102 em Sorocaba e 15 em Votorantim. O Farmácia Popular é um programa do governo federal com uma rede de farmácias credenciadas. Confirme na farmácia o que está disponível e as regras.</span>
                 </div></div>
             </div>
             <p class="mt-3">Das 378 farmácias, <strong>245 (65%)</strong> estão no ponto exato do endereço ou foram confirmadas por fontes. <strong>54 (14%)</strong> têm posição estimada pelos vizinhos do IBGE: no mapa aparecem sem foto da fachada. <strong>79 (21%)</strong> estão só na rua, no CEP ou com uma única fonte: aparecem marcadas como <em>localização aproximada</em>.</p>
@@ -90,11 +92,11 @@
             <h2 id="fontes" class="h4 fw-bold">De onde vêm os dados</h2>
             <ul class="list-group list-group-flush mt-3">
                 <li class="list-group-item bg-transparent px-0"><strong>Receita Federal</strong> (CNPJ Dados Abertos, competência 10/2026): quais farmácias existem, com CNPJ ativo, atividade, endereço e CEP.</li>
-                <li class="list-group-item bg-transparent px-0"><strong>CNES, DataSUS / Ministério da Saúde</strong>: UBS ativas, farmácias cadastradas, coordenadas e contatos. Também a lista nacional de UBS, para conferência.</li>
+                <li class="list-group-item bg-transparent px-0"><strong>CNES, DataSUS / Ministério da Saúde</strong>: farmácias cadastradas, coordenadas e contatos.</li>
                 <li class="list-group-item bg-transparent px-0"><strong>IBGE</strong>: endereços do Censo 2022 (CNEFE), usados para a coordenada de cada número, e os contornos oficiais de Sorocaba e Votorantim.</li>
                 <li class="list-group-item bg-transparent px-0"><strong>OpenStreetMap</strong> (comunidade, licença ODbL): ajuda a confirmar a posição. Nunca é a única prova de que uma farmácia existe.</li>
                 <li class="list-group-item bg-transparent px-0"><strong>Nominatim e BrasilAPI</strong>: posição aproximada pela rua ou pelo CEP, quando as outras fontes não cobrem o endereço.</li>
-                <li class="list-group-item bg-transparent px-0"><strong>Prefeitura de Sorocaba (Portal 156)</strong>: conferência do número de UBS (a Prefeitura também fala em 33 em Sorocaba).</li>
+                <li class="list-group-item bg-transparent px-0"><strong>Ministério da Saúde (painel Farmácia Popular do Brasil, dados até 28/10/2026)</strong>: quais farmácias fazem parte do programa Farmácia Popular.</li>
             </ul>
             <p class="small text-body-secondary mt-3">Detalhes e método completos estão no relatório de fontes do projeto (RELATORIO_FONTES_DOS_DADOS.md).</p>
         </section>
@@ -106,6 +108,8 @@
                 <dd class="col-sm-8">A posição foi achada só pela rua ou pelo CEP. O ponto fica na rua certa, mas pode estar a algumas centenas de metros do número. Nesses casos não mostramos foto da fachada.</dd>
                 <dt class="col-sm-4"><span class="badge text-bg-secondary">Dados de exemplo (fictícios)</span></dt>
                 <dd class="col-sm-8">Preços e estoques de exemplo, criados só para demonstrar a busca. Não são informações reais de nenhuma farmácia.</dd>
+                <dt class="col-sm-4"><span class="badge tipo-popular">Farmácia Popular</span></dt>
+                <dd class="col-sm-8">A farmácia faz parte da rede credenciada do programa Farmácia Popular, segundo o painel do Ministério da Saúde. Confirme na farmácia o que está disponível e as regras.</dd>
                 <dt class="col-sm-4"><span class="badge text-bg-secondary">Farmácia pública</span></dt>
                 <dd class="col-sm-8">Farmácia da rede pública cadastrada no CNES, como as de medicamentos de alto custo.</dd>
                 <dt class="col-sm-4">Horário não informado</dt>
@@ -176,12 +180,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="js/tema.js?v=20261022b3"></script>
+    <script src="js/tema.js?v=20261030a"></script>
     <script>
         // Liga o seletor de tema desta página (a mesma classe usada na página inicial)
         new Tema(document.getElementById("botao-tema"), [...document.querySelectorAll("[data-tema]")]);
     </script>
-    <script src="js/sessao.js?v=20261022b3"></script>
+    <script src="js/sessao.js?v=20261030a"></script>
     <script>Sessao.iniciar();</script>
 </body>
 </html>

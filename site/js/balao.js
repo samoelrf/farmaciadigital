@@ -7,7 +7,7 @@ class Balao {
     static CURVA = "cubic-bezier(0.16, 1, 0.3, 1)";
     // espelha o icon-size da camada: se mudar lá, muda aqui
     static ESCALA_FARMACIA = [[9, 0.4], [13, 0.8], [16, 1]];
-    static ESCALA_UBS = [[9, 0.5], [13, 0.85], [16, 1]];
+    static ESCALA_POPULAR = [[9, 0.5], [13, 0.85], [16, 1]];
     static SELETORES_CONTROLES = [".mapboxgl-ctrl-top-right", ".mapboxgl-ctrl-bottom-right", ".mapboxgl-ctrl-bottom-left"];
 
     constructor({ mapa, fachada, favoritos }) {
@@ -93,8 +93,8 @@ class Balao {
         const projetado = this.mapa.projetar(item.coords);
         const p = { x: projetado.x + mapaNaTela.left, y: projetado.y + mapaNaTela.top };
         const zoom = this.mapa.zoom();
-        if (item.props.tipo === "ubs") {
-            const altura = 40 * Balao.escalaNoZoom(Balao.ESCALA_UBS, zoom);
+        if (item.props.popular === true || item.props.popular === "true") {
+            const altura = 40 * Balao.escalaNoZoom(Balao.ESCALA_POPULAR, zoom);
             const cabecaY = p.y - 0.65 * altura;
             const raioCabeca = 0.325 * altura;
             return { x: p.x, y: cabecaY, gap: raioCabeca + 2, xBaixo: p.x, yBaixo: p.y + 2, gapBaixo: 2 };
@@ -370,12 +370,13 @@ class Balao {
             conteudo.appendChild(telefone);
         }
         conteudo.appendChild(this.criarAcoes(p, lat, lng));
-        conteudo.appendChild(this.favoritos.criarBotao(ehFarmacia ? "farmacia" : "ubs", Number(p.id), "btn btn-sm btn-outline-primary rounded-pill mt-2"));
+        conteudo.appendChild(this.favoritos.criarBotao("farmacia", Number(p.id), "btn btn-sm btn-outline-primary rounded-pill mt-2"));
         return conteudo;
     }
 
     static etiquetas(p, ehFarmacia) {
         const etiquetas = [];
+        if (p.popular === true || p.popular === "true") etiquetas.push({ texto: "Farmácia Popular", classe: "tipo-popular" });
         const ehExemplo = ehFarmacia && (p.exemplo === true || p.exemplo === "true");
         if (ehExemplo) etiquetas.push({ texto: "Dados fictícios", classe: "text-bg-secondary" });
         else if (ehFarmacia && p.tipoFarmacia === "pública") etiquetas.push({ texto: "Farmácia pública", classe: "text-bg-secondary" });

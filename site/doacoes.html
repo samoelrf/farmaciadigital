@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Doar ou pedir remédio · Farmácia Digital</title>
+    <meta name="description" content="Doe remédio lacrado e dentro da validade, ou peça um remédio que você não tem como pagar.">
+    <script>
+        (function () {
+            try {
+                var salvo = localStorage.getItem("farmaciadigital.tema");
+                var escuro = salvo === "escuro" || (salvo === "sistema" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+                document.documentElement.setAttribute("data-bs-theme", escuro ? "dark" : "light");
+            } catch (erro) {
+                // Sem armazenamento (modo privado): a página começa no claro
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css?v=20261030a">
+</head>
+<body>
+    <header class="navbar navbar-expand-lg sticky-top bg-body border-bottom shadow-sm">
+        <div class="container-fluid px-3 px-lg-4">
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="index.html#inicio">
+                <svg class="cruz" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 2h6v7h7v6h-7v7H9v-7H2V9h7z"/></svg>
+                Farmácia Digital
+            </a>
+            <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal"
+                    aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="menu-principal">
+                <ul class="navbar-nav ms-lg-auto gap-lg-1 align-items-lg-center">
+                    <li class="nav-item"><a class="nav-link" href="index.html#buscar">Mapa</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.html#remedio">Remédio e preço</a></li>
+                    <li class="nav-item"><a class="nav-link" href="sobre.html">Sobre</a></li>
+                    <li class="nav-item" id="link-entrar" hidden><a class="nav-link" href="entrar.html">Entrar</a></li>
+                    <li class="nav-item dropdown" id="menu-conta" hidden>
+                        <button id="botao-conta" class="nav-link dropdown-toggle btn btn-link d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="currentColor"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" fill="currentColor"/></svg>
+                            <span id="nome-usuario"></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="favoritos.html">Meus favoritos</a></li>
+                            <li><a class="dropdown-item" href="doacoes.html">Doar ou pedir remédio</a></li>
+                            <li id="item-painel" hidden><a class="dropdown-item" href="painel-farmacia.html">Painel da farmácia</a></li>
+                            <li id="item-painel-doacoes" hidden><a class="dropdown-item" href="painel-doacoes.html">Doações recebidas</a></li>
+                            <li id="item-admin" hidden><a class="dropdown-item" href="admin.html">Área do administrador</a></li>
+                            <li><a class="dropdown-item" href="conta.html">Minha conta</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item" id="botao-sair-menu">Sair</button></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item py-2 py-lg-0">
+                        <div class="dropdown">
+                            <button id="botao-tema" type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-bs-toggle="dropdown" aria-expanded="false">Tema: claro</button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><button type="button" class="dropdown-item" data-tema="sistema">Sistema</button></li>
+                                <li><button type="button" class="dropdown-item" data-tema="claro">Claro</button></li>
+                                <li><button type="button" class="dropdown-item" data-tema="escuro">Escuro</button></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+        <main class="container py-4 py-lg-5" style="max-width: 960px;">
+        <h1 class="display-6 fw-bold mb-1">Doar ou pedir remédio</h1>
+        <p class="lead text-body-secondary mb-4">
+            Quem tem remédio em casa, lacrado e dentro da validade, pode doar para uma farmácia da lista.
+            Quem precisa e não tem como pagar pede o remédio aqui. A farmácia confere a doação e repassa.
+        </p>
+
+        <div id="sem-entrar" class="alert alert-warning" hidden>
+            Entre na sua conta para doar ou pedir remédio.
+            <a href="entrar.html?voltar=%2Fdoacoes.html" class="alert-link">Entrar</a>
+        </div>
+        <div id="so-cidadao" class="alert alert-info" hidden>
+            A conta de administrador não faz doações nem pedidos.
+        </div>
+
+        <div id="aviso" class="alert alert-danger" role="alert" hidden></div>
+        <div id="aviso-ok" class="alert alert-success" role="status" hidden></div>
+
+        <div id="conteudo" hidden>
+            <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="guia-doar" data-bs-toggle="tab" data-bs-target="#aba-doar"
+                            type="button" role="tab" aria-controls="aba-doar" aria-selected="true">Quero doar</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="guia-pedir" data-bs-toggle="tab" data-bs-target="#aba-pedir"
+                            type="button" role="tab" aria-controls="aba-pedir" aria-selected="false">Preciso de um remédio</button>
+                </li>
+            </ul>
+
+            <div class="tab-content mb-5">
+                <section class="tab-pane fade show active" id="aba-doar" role="tabpanel" aria-labelledby="guia-doar">
+                    <form id="form-doar" class="card card-body shadow-sm">
+                        <p class="small text-body-secondary mb-3">
+                            Leve o remédio até a farmácia escolhida. Ela confere lacre, validade e embalagem antes de repassar.
+                        </p>
+                        <div class="mb-3">
+                            <label for="doar-busca" class="form-label">Qual remédio?</label>
+                            <input id="doar-busca" class="form-control" type="search" placeholder="Digite o nome (pelo menos 3 letras)" autocomplete="off">
+                            <select id="doar-medicamento" class="form-select mt-2" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="doar-farmacia" class="form-label">Em qual farmácia você vai entregar?</label>
+                            <select id="doar-farmacia" class="form-select" required></select>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                <label for="doar-quantidade" class="form-label">Quantidade</label>
+                                <input id="doar-quantidade" class="form-control" type="number" min="1" max="10000" required>
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="doar-validade" class="form-label">Validade</label>
+                                <input id="doar-validade" class="form-control" type="date" required>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary rounded-pill px-4" type="submit">Quero doar</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="tab-pane fade" id="aba-pedir" role="tabpanel" aria-labelledby="guia-pedir">
+                    <form id="form-pedir" class="card card-body shadow-sm">
+                        <p class="small text-body-secondary mb-3">
+                            Informe só o remédio e a quantidade. Não precisa dizer o motivo.
+                            Quando uma farmácia tiver doação desse remédio, ela entrega para você.
+                        </p>
+                        <div class="mb-3">
+                            <label for="pedir-busca" class="form-label">Qual remédio você precisa?</label>
+                            <input id="pedir-busca" class="form-control" type="search" placeholder="Digite o nome (pelo menos 3 letras)" autocomplete="off">
+                            <select id="pedir-medicamento" class="form-select mt-2" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="pedir-quantidade" class="form-label">Quantidade</label>
+                            <input id="pedir-quantidade" class="form-control" type="number" min="1" max="1000" required>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary rounded-pill px-4" type="submit">Pedir remédio</button>
+                        </div>
+                    </form>
+                </section>
+            </div>
+
+            <section class="mb-5">
+                <h2 class="h4 fw-bold">Minhas doações</h2>
+                <p id="vazio-doacoes" class="text-body-secondary" hidden>Você ainda não doou nenhum remédio.</p>
+                <ul id="lista-doacoes" class="list-group mb-4"></ul>
+            </section>
+
+            <section class="mb-5">
+                <h2 class="h4 fw-bold">Meus pedidos</h2>
+                <p id="vazio-pedidos" class="text-body-secondary" hidden>Você ainda não fez nenhum pedido.</p>
+                <ul id="lista-pedidos" class="list-group"></ul>
+            </section>
+        </div>
+    </main>
+
+    <footer class="border-top py-4 bg-body">
+        <div class="container d-flex flex-wrap justify-content-between gap-2 small text-body-secondary">
+            <span>Dados: Receita Federal, CNES (DataSUS), IBGE e OpenStreetMap.</span>
+            <a href="sobre.html">Sobre os dados e a privacidade</a>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="js/tema.js?v=20261030a"></script>
+    <script src="js/sessao.js?v=20261030a"></script>
+    <script>
+        new Tema(document.getElementById("botao-tema"), [...document.querySelectorAll("[data-tema]")]);
+        Sessao.iniciar();
+    </script>
+    <script src="js/doacoes.js?v=20261118"></script>
+</body>
+</html>

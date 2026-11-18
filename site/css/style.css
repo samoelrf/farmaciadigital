@@ -148,7 +148,9 @@ section[id] {
 }
 
 /* o hidden precisa vencer o d-flex do Bootstrap */
-.carregando-mapa[hidden] {
+.carregando-mapa[hidden],
+#editando-lote[hidden],
+#editando-servico[hidden] {
     display: none !important;
 }
 
@@ -176,9 +178,9 @@ section[id] {
     color: var(--texto-sobre-vermelho);
 }
 
-.tipo-ubs {
-    background-color: #5B6577;
-    color: #fff;
+.tipo-popular {
+    background-color: var(--azul-destaque);
+    color: var(--texto-sobre-vermelho);
 }
 
 .card-preco {

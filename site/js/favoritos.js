@@ -1,7 +1,7 @@
 class Favoritos {
     constructor() {
         this.logado = false;
-        this.conjuntos = { farmacia: new Set(), ubs: new Set(), medicamento: new Set() };
+        this.conjuntos = { farmacia: new Set(), medicamento: new Set() };
     }
 
     async iniciar() {
@@ -11,7 +11,6 @@ class Favoritos {
             const dados = await resposta.json();
             this.logado = true;
             this.conjuntos.farmacia = new Set(dados.farmacias.map((x) => x.id));
-            this.conjuntos.ubs = new Set(dados.ubs.map((x) => x.id));
             this.conjuntos.medicamento = new Set(dados.medicamentos.map((x) => x.id));
         } catch (erro) {
             console.error("Não foi possível carregar os favoritos:", erro);

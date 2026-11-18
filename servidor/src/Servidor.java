@@ -40,7 +40,7 @@ public class Servidor {
         }
         if (Favoritos.trata(troca, caminho) || PainelFarmacia.trata(troca, caminho) || RedefinirSenha.trata(troca, caminho)
                 || Admin.trata(troca, caminho) || ServicosFarmacia.trata(troca, caminho)
-                || EstoqueFarmacia.trata(troca, caminho)) {
+                || EstoqueFarmacia.trata(troca, caminho) || Doacoes.trata(troca, caminho)) {
             return;
         }
         if (!"GET".equals(troca.getRequestMethod())) {

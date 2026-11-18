@@ -51,6 +51,9 @@ public class TesteSimples {
         HttpResponse<String> pontos = get("/api/pontos", null);
         verificar("GET /api/pontos responde 200 com tipoFarmacia e fonteHorario",
                 pontos.statusCode() == 200 && pontos.body().contains("\"tipoFarmacia\"") && pontos.body().contains("\"fonteHorario\""));
+        verificar("GET /api/pontos tem o campo popular", pontos.body().contains("\"popular\""));
+        verificar("existem farmácias com popular=true", pontos.body().contains("\"popular\":true"));
+        verificar("GET /api/pontos não devolve mais UBS", !pontos.body().contains("\"tipo\":\"ubs\""));
 
         HttpResponse<String> remedios = get("/api/medicamentos?nome=losar", null);
         verificar("GET /api/medicamentos acha a Losartana (id 1)",

@@ -8,7 +8,7 @@ const CENTRO_SOROCABA = { lat: -23.5015, lng: -47.4526 };
 class App {
     constructor() {
         this.posicao = null;
-        this.tiposVisiveis = new Set(["farmacia", "ubs"]);
+        this.tiposVisiveis = new Set(["farmacia", "popular"]);
         this.aviso = $id("aviso");
         this.avisoRemedio = $id("aviso-remedio");
         this.listaLocais = $id("lista-locais");
@@ -155,11 +155,11 @@ class App {
                 this.abrirPontoDaUrl();
             } catch (erro) {
                 console.error("Não foi possível desenhar os pontos do mapa:", erro);
-                this.mostrarAviso("Não foi possível desenhar as farmácias e UBS no mapa.", true);
+                this.mostrarAviso("Não foi possível desenhar as farmácias no mapa.", true);
             }
         } else {
             console.error("Não foi possível carregar os pontos do mapa:", pontos.reason);
-            this.mostrarAviso("Não foi possível carregar as farmácias e UBS. Recarregue a página para tentar de novo.", true);
+            this.mostrarAviso("Não foi possível carregar as farmácias. Recarregue a página para tentar de novo.", true);
         }
         this.carregandoMapa.hidden = true;
     }
@@ -189,8 +189,8 @@ class App {
             botao.classList.toggle("active", ligado);
             botao.textContent = `${ligado ? "✓ " : ""}${botao.dataset.rotulo}`;
         });
-        const tipoDoBalao = this.balao.itens[0]?.props.tipo;
-        if (this.balao.aberto && tipoDoBalao && !this.tiposVisiveis.has(tipoDoBalao)) {
+        const pontoDoBalao = this.balao.itens[0]?.props;
+        if (this.balao.aberto && pontoDoBalao && !this.tiposVisiveis.has(Mapa.categoria({ popular: pontoDoBalao.popular === true || pontoDoBalao.popular === "true" }))) {
             this.balao.fechar({ restaurarFoco: false });
         }
         this.renderizarLocais();
@@ -199,7 +199,7 @@ class App {
     renderizarLocais() {
         const origem = this.posicao ?? CENTRO_SOROCABA;
         const visiveis = this.mapa.pontos
-            .filter((p) => this.tiposVisiveis.has(p.tipo))
+            .filter((p) => this.tiposVisiveis.has(Mapa.categoria(p)))
             .map((p) => ({ ponto: p, km: RemedioPrecos.distanciaKm(origem.lat, origem.lng, p.latitude, p.longitude) }))
             .sort((a, b) => a.km - b.km);
 
@@ -223,8 +223,8 @@ class App {
         const linha = document.createElement("span");
         linha.className = "d-flex flex-wrap align-items-center gap-2 mt-1";
         const tipo = document.createElement("span");
-        tipo.className = `badge ${p.tipo === "ubs" ? "tipo-ubs" : "tipo-farmacia"}`;
-        tipo.textContent = p.tipo === "ubs" ? "UBS" : "Farmácia";
+        tipo.className = `badge ${p.popular ? "tipo-popular" : "tipo-farmacia"}`;
+        tipo.textContent = p.popular ? "Farmácia Popular" : "Farmácia";
         const distancia = document.createElement("span");
         distancia.className = "fw-bold";
         distancia.textContent = this.formatarDistancia(km);
@@ -288,11 +288,9 @@ class App {
 
     abrirPontoDaUrl() {
         const params = new URLSearchParams(window.location.search);
-        const farmacia = params.get("ponto");
-        const valor = farmacia ?? params.get("ubs");
+        const valor = params.get("ponto");
         if (!valor || !/^\d+$/.test(valor)) return;
-        const tipo = farmacia !== null ? "farmacia" : "ubs";
-        const ponto = this.mapa.pontos.find((p) => p.tipo === tipo && String(p.id) === valor);
+        const ponto = this.mapa.pontos.find((p) => String(p.id) === valor);
         if (ponto) this.verNoMapa(ponto);
     }
 
@@ -303,8 +301,8 @@ class App {
     verNoMapa(p) {
         const ponto = this.mapa.pontos.find((x) => Math.abs(x.latitude - p.latitude) < 1e-6
             && Math.abs(x.longitude - p.longitude) < 1e-6);
-        if (ponto && !this.tiposVisiveis.has(ponto.tipo)) {
-            this.definirFiltro([...this.tiposVisiveis, ponto.tipo]);
+        if (ponto && !this.tiposVisiveis.has(Mapa.categoria(ponto))) {
+            this.definirFiltro([...this.tiposVisiveis, Mapa.categoria(ponto)]);
         }
         this.irParaSecao("buscar");
         this.mapa.irPara(p.latitude, p.longitude, 16);

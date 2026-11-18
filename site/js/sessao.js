@@ -46,6 +46,8 @@ class Sessao {
         document.getElementById("item-admin").hidden = usuario.tipo !== "admin";
         // o servidor diz se o painel já está liberado (farmácia aprovada, ou cadastro novo ainda em análise)
         document.getElementById("item-painel").hidden = !(acesso && acesso.painel === true);
+        const itemDoacoes = document.getElementById("item-painel-doacoes");
+        if (itemDoacoes) itemDoacoes.hidden = !(acesso && acesso.painel === true);
     }
 
     static async iniciar() {
